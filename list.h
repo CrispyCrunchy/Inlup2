@@ -6,6 +6,7 @@
 
 typedef struct list list_t;
 
+
 /// Creates a new list 
 ///
 /// \param copy (may be NULL) a function applied to all elements when stored in the list
