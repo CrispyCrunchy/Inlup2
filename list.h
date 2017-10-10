@@ -13,7 +13,7 @@ typedef struct list list_t;
 /// \param free (may be NULL) used to free elements in list_delete
 /// \param compare (may be NULL) used to compare elements in list_contains
 /// \returns: empty list
-list_t *list_new(element_copy_fun copy, element_free_fun free, element_comp_fun compare);
+list_t *list_new(element_copy_fun copy, element_free_fun free, element_comp_fun comp);
 
 
 /// Inserts a new element at a given index. 
