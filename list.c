@@ -53,36 +53,31 @@ void list_insert(list_t *list, int index, elem_t elem)
   link_t *newlink = calloc(1, sizeof(link_t));
   newlink->elem = &elem;
   int len = list_length(list);
+
   if (index > len)
     {
       index = len;
     }
-  if (index < 0 && index > (0 - len))
+  if (index < 0 && index > (- len))
     {
       index = len + index + 1;
     }
-  if (index < (0 - len))
-    {
-      index = 0;
-    }
-  if (index == 0)
+  if (index < (- len) || index == 0)
     {
       index = 1;
     }
-  // 'list's copy function is non-NULL, it will be applied to elem and its result'??
+
   if (list->copy != NULL)
     {
       list->copy(elem);
     }
-  else
+  
+  for (int i = 1; i < index - 1; ++i)
     {
-      for (int i = 1; i < index - 1; ++i)
-        {
-          tmp = tmp->next;
-        } 
-      newlink->next = tmp->next;
-      tmp->next = newlink;
-    }
+      tmp = tmp->next;
+    } 
+  newlink->next = tmp->next;
+  tmp->next = newlink;
 }
 
 void list_append(list_t *list, elem_t elem)
@@ -100,31 +95,31 @@ void list_remove(list_t *list, int index, bool delete)
 {
   int len = list_length(list);
   link_t *tmp = list->first;
+  link_t *tem = NULL;
+  
   if (index > len)
     {
       index = len;
     }
-  if (index < 0 && index > (0 - len))
+  if (index < 0 && index > (- len))
     {
       index = len + index + 1;
     }
-  if (index < (0 - len))
-    {
-      index = 0;
-    }
-  if (index == 0)
+  if (index < (- len) || index == 0)
     {
       index = 1;
     }
+  
   if (delete == true)
     {
       for (int i = 1; i < index - 1; ++i)
         {
           tmp = tmp->next;
         }
+      tem = tmp->next;
       tmp->next = tmp->next->next;
       // 'param delete if true, run list's free function on the removed element'
-      list->free(*tmp->elem);   
+      list->free(*tem->elem);   
     }
 }
 
@@ -136,7 +131,7 @@ bool list_get(list_t *list, int index, elem_t *result)
     {
       index = len + index + 1;
     }
-  if (index > len)
+  if (index > len || index < (-len))
     {
       return false;
     }
@@ -163,16 +158,24 @@ bool list_last(list_t *list, elem_t *result)
   return list_get(list, -1, result);
 }
 
+
+void list_delete_aux(link_t *link, int len, element_free_fun free)
+{
+  if (link->next != NULL)
+    {
+      list_delete_aux(link->next, len - 1, free);
+    }
+  
+  free(*link->elem);
+}
+
 void list_delete(list_t *list, bool delete)
 {
   int len = list_length(list);
   // 'param delete if true, use list's free function to free elements'
   if (delete == true)
     {
-      for (int i = len; i > 0; --i)
-        {
-          list->free(*list->last->elem);
-        } 
+      list_delete_aux(list->first, len, list->free);
     }
 }
 
@@ -187,7 +190,7 @@ bool list_apply(list_t *list, elem_apply_fun fun, void *data)
     {
       t = fun(*tmp->elem, data);
       tmp = tmp->next;
-      if (result == false)
+      if (t == true)
         {
           result = t;
         }
@@ -198,22 +201,20 @@ bool list_apply(list_t *list, elem_apply_fun fun, void *data)
 int list_contains(list_t *list, elem_t elem)
 {
   int len = list_length(list);
-  // 'list's compare if non-NULL'??
+  elem_t *result = NULL;
+  bool list_exist = false;
+
   if (list->comp != NULL)
     {
       for (int i = 0; i <= len; ++i )
         {
-          elem_t *result;
-          bool list_exist = list_get(list, i, result);
-          if (list_exist == true)
+          list_exist = list_get(list, i, result);
+
+          if (list->comp(elem, *result) == 0)
             {
-              list->comp(elem, *result);
               return i;
-            }
-          else
-            {
-              return -1;
             }
         }
     }
+  return - 1;
 }
