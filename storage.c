@@ -9,11 +9,15 @@
 #include "common.h"
 #include "db.h"
 
+typedef struct shelf shelf_t;
+
 struct shelf
 {
   char *shelf;
   int amount;
 };
+
+typedef struct item item_t;
 
 struct item
 {
@@ -25,25 +29,25 @@ struct item
 struct action
 {
   int type; // NOTHING = 0, ADD = 1, REMOVE = 2, EDIT = 3
-  item_t copy;
-  item_t *orig;
+  elem_t copy;
+  elem_t *orig;
 };
 
-elem_t make_items(char *desc, int price, list_t *shelves)
+item_t make_items(char *desc, int price, list_t *shelves)
 {
-  elem_t *elem = calloc(1, sizeof(struct item));
+  item_t *elem = calloc(1, sizeof(struct item));
   elem->desc = desc;
   elem->price = price;
   elem->shelves = shelves;
-  return elem;
+  return *elem;
 }
 
-L make_shelves(char *shelf, int amount)
+shelf_t make_shelves(char *shelf, int amount)
 {
-  L l = calloc(1, sizeof(struct shelf));
-  l->shelf = shelf;
-  l->amount = amount;
-  return l;
+  shelf_t *new_shelf = calloc(1, sizeof(struct shelf));
+  new_shelf->shelf = shelf;
+  new_shelf->amount = amount;
+  return *new_shelf;
 }
 
 int compare_letter(char *first_string, char *second_string)
@@ -81,7 +85,7 @@ list_t *copy_shelves(list_t *shelves)
 
   for (int i = 0; i < siz; ++i)
     {
-      struct shelf *tmp = *(list_get(shelves, i+1));
+      struct shelf *tmp = *(list_get(shelves, i + 1));
       struct shelf *shelf_copy = calloc(1, sizeof(struct shelf));
       
       shelf_copy->shelf = tmp->shelf;
@@ -93,7 +97,7 @@ list_t *copy_shelves(list_t *shelves)
   return list_copy;
 }
 
-struct item copy_item(T item)
+struct item copy_item(item_t *item)
 {
   struct item *item_copy = calloc(1, sizeof(struct item));
   
@@ -104,13 +108,12 @@ struct item copy_item(T item)
   return *item_copy;
 }
 
-void edit_savestate(T item, struct action *savestate)
+void edit_savestate(L item, struct action *savestate)
 {  
   savestate->type = 2;
   savestate->copy = copy_item(item);
   savestate->orig = item;  
 }
-
 
 bool exist_shelf(list_t *master_list, char *shelf)
 {
@@ -127,7 +130,7 @@ bool exist_shelf(list_t *master_list, char *shelf)
   return false;
 }
 
-void key_exist(tree_t *tree, K name, char *hylla, list_t *master_list)
+void key_exist(tree_t *tree, tree_key_t name, char *hylla, list_t *master_list)
 {  
    do
     {
@@ -370,9 +373,6 @@ void replace_amount(T item, int shelf, struct action *savestate)
   (*newshelf)->amount = newamount;   
 }
 
-
-// funk för kopiera vara, returnerar kopian
-
 void edit_amount(T item, struct action *savestate)
 {
   int size = list_length(item->shelves);
@@ -446,7 +446,7 @@ tree_t *edit_storage(tree_t *tree, list_t *master_list, struct action *savestate
     }
   if ((input == 'A' || input == 'a'))
     {
-      return tree;
+i      return tree;
     }
   
 return tree;
@@ -465,6 +465,8 @@ void undo_change(struct action *savestate)
     }
 }
 
+void sort_tree(tree_t *tree)
+
 void event_loop(tree_t *tree, list_t *master_list)
 {
   bool quit = false;
@@ -472,7 +474,7 @@ void event_loop(tree_t *tree, list_t *master_list)
   struct action *savestate = calloc(1, sizeof(struct action));
   while (!quit)
     {
-      input = ask_question_menu("\nVälkommen till lagerhantering 1.0\n=================================\n\n[L]ägg till en vara\n[T]a bort en vara\n[R]edigera en vara\nÅn[g]ra senaste ändringen\nLista [h]ela varukatalogen\n[A]vsluta\n \nVad vill du göra idag? ");
+      input = ask_question_menu("\nVälkommen till lagerhantering 2.0\n=================================\n\n[L]ägg till en vara\n[T]a bort en vara\n[R]edigera en vara\nÅn[g]ra senaste ändringen\nLista [h]ela varukatalogen\n[S]ortera databasen\n[K]ontrollera databasens sortering\n[A]vsluta\n \nVad vill du göra idag? ");
       if ((input == 'L' || input == 'l'))
         {
           tree = ask_question_new_item(tree, master_list);
@@ -492,6 +494,14 @@ void event_loop(tree_t *tree, list_t *master_list)
       else if (input == 'H'|| input == 'h')
         {
           tree_index(tree);
+        }
+       else if (input == 'S'|| input == 's')
+        {
+          sort_tree();
+        }
+      else if (input == 'K'|| input == 'k')
+        {
+          is_tree_sorted();
         }
       else if (input == 'A'|| input == 'a')
         {

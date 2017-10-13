@@ -129,6 +129,10 @@ bool is_menu(char *arg)
                             *arg == 'g' ||
                             *arg == 'H' ||
                             *arg == 'h' ||
+                            *arg == 'S' ||
+                            *arg == 's' ||
+                            *arg == 'K' ||
+                            *arg == 'k' ||
                             *arg == 'A' ||
                             *arg == 'a'))
     {

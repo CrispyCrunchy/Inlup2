@@ -51,7 +51,6 @@ void list_insert(list_t *list, int index, elem_t elem)
 {
   link_t *tmp = list->first;
   link_t *newlink = calloc(1, sizeof(link_t));
-  newlink->elem = &elem;
   int len = list_length(list);
 
   if (index > len)
@@ -69,15 +68,25 @@ void list_insert(list_t *list, int index, elem_t elem)
 
   if (list->copy != NULL)
     {
-      list->copy(elem);
+      *newlink->elem = list->copy(elem);
+      for (int i = 1; i < index - 1; ++i)
+        {
+          tmp = tmp->next;
+        } 
+      newlink->next = tmp->next;
+      tmp->next = newlink;
     }
   
-  for (int i = 1; i < index - 1; ++i)
+  else if(list->copy == NULL)
     {
-      tmp = tmp->next;
-    } 
-  newlink->next = tmp->next;
-  tmp->next = newlink;
+      newlink->elem = &elem;
+      for (int i = 1; i < index - 1; ++i)
+        {
+          tmp = tmp->next;
+        } 
+      newlink->next = tmp->next;
+      tmp->next = newlink;
+    }
 }
 
 void list_append(list_t *list, elem_t elem)
@@ -211,6 +220,18 @@ int list_contains(list_t *list, elem_t elem)
           list_exist = list_get(list, i, result);
 
           if (list->comp(elem, *result) == 0)
+            {
+              return i;
+            }
+        }
+    }
+  else
+    {
+      for (int i = 0; i <= len; ++i)
+        {
+          list_exist = list_get(list, i, result);
+          
+          if (elem.i == result->i)
             {
               return i;
             }

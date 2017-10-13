@@ -226,8 +226,6 @@ bool tree_get(tree_t *tree, tree_key_t key, elem_t *result)
   return node_get(tree->root, key, result);
 }
 
-  
-
 
 int node_keys(node_t *node, tree_key_t *keys, int i)
 {

@@ -1,0 +1,125 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+#include <ctype.h>
+#include "utils.h"
+#include "tree.h"
+#include "list.h"
+#include "common.h"
+#include "db.h"
+
+typedef struct shelf shelf_t;
+
+struct shelf
+{
+  char *shelf;
+  int amount;
+};
+
+typedef struct item item_t;
+
+struct item
+{
+  char *desc;
+  int price;
+  list_t *shelves;
+};
+
+struct action
+{
+  int type; // NOTHING = 0, ADD = 1, REMOVE = 2, EDIT = 3
+  elem_t copy;
+  elem_t *orig;
+};
+
+
+tree_t *ask_question_new_item(tree_t *tree, list_t *master_list)
+{
+
+  tree_key_t *name = calloc(1, sizeof(char));
+  char *desc = calloc(1, sizeof(char));
+  char *hylla = calloc(1, sizeof(char));
+  shelf_t *shelf = calloc(1, sizeof(struct shelf));
+  item_t * item = calloc(1, sizeof(struct item));
+  list_t *shelves = list_new();
+  
+  name = ask_question_string("Ange namn på varan:");
+  if (tree_has_key(tree, name) == true)
+    {
+      char answer = ask_question_yes_no("Varan finns redan. Vill du lägga till den i en ny hylla? [J/N]");
+      if (answer == 'J')
+        {
+          key_exist(tree, name, hylla, master_list);
+          return tree;
+        }
+      else
+        {
+          return tree;
+        }
+    }
+
+  desc = ask_question_string("Ange beskrivning av varan:");
+  int price = ask_question_price("Ange varans pris:");
+  do
+    {
+      hylla = ask_question_shelf("Ange vilken hylla varan ligger på:");
+      if (exist_shelf(master_list, hylla))
+        {
+          printf("Hyllan används redan. Ange en annan hylla.\n");
+        }
+    }
+  while (exist_shelf(master_list, hylla));
+  int amount = ask_question_price("Ange antal varor på hyllan:");
+  
+  shelf = make_shelves(hylla, amount);
+  list_append(master_list, shelf);
+  list_append(shelves, shelf);
+  item = make_items(desc, price, shelves);
+  tree_insert(tree, name, item);
+  return tree;
+}
+
+void event_loop(tree_t *tree, list_t *master_list)
+{
+  bool quit = false;
+  char input;
+  struct action *savestate = calloc(1, sizeof(struct action));
+  while (!quit)
+    {
+      input = ask_question_menu("\nVälkommen till lagerhantering 2.0\n=================================\n\n[L]ägg till en vara\n[T]a bort en vara\n[R]edigera en vara\nÅn[g]ra senaste ändringen\nLista [h]ela varukatalogen\n[S]ortera databasen\n[K]ontrollera databasens sortering\n[A]vsluta\n \nVad vill du göra idag? ");
+      if ((input == 'L' || input == 'l'))
+        {
+          tree = ask_question_new_item(tree, master_list);
+        }
+      else if (input == 'T'|| input == 't')
+        {
+          printf("Inte ännu implementerad\n");
+        }
+      else if (input == 'R'|| input == 'r')
+        {
+          tree = edit_storage(tree, master_list, savestate);
+        }
+      else if (input == 'G'|| input == 'g')
+        {
+          undo_change(savestate);
+        }
+      else if (input == 'H'|| input == 'h')
+        {
+          tree_index(tree);
+        }
+       else if (input == 'S'|| input == 's')
+        {
+          sort_tree();
+        }
+      else if (input == 'K'|| input == 'k')
+        {
+          is_tree_sorted();
+        }
+      else if (input == 'A'|| input == 'a')
+        {
+          quit = true;
+        }
+    }
+  return;  
+}
