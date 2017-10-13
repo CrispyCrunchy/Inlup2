@@ -178,6 +178,29 @@ void print_shelf(item_t *item)
     }
 }
 
+int tree_index(tree_t *tree)
+{
+  int screen_index = 1;
+  tree_key_t *keys = tree_keys(tree);
+  int size = tree_size(tree);
+  
+  for (int i = 0; i < size; ++i, ++screen_index)
+    {
+      printf("%d. %s\n", screen_index, elem_to_char(&keys[i]));
+      if (screen_index == 20)
+        {
+          screen_index = 0;
+          
+          char answer = ask_question_yes_no("Visa nästa 20 varor, [J]a/[N]ej?");
+          if (answer == 'N')
+            {
+              return (i - 1) / 20;
+            }
+        }
+    }
+  
+  return (size - 1) / 20;
+}
 
 
 bool exist_shelf(list_t *master_list, char *shelf_name)
@@ -231,7 +254,7 @@ tree_t *ask_question_new_item(tree_t *tree, list_t *master_list)
   char *hylla = calloc(1, sizeof(char));
   shelf_t *shelf = calloc(1, sizeof(struct shelf));
   item_t *item = calloc(1, sizeof(struct item));
-  list_t *shelves = list_new((element_copy_fun) copy_item,(element_free_fun) free_list,(element_comp_fun) compare_letter);
+  list_t *shelves = list_new((element_copy_fun) copy_item,(element_free_fun) free,(element_comp_fun) compare_letter);
 
   char *name = calloc(1, sizeof(char));
   name = ask_question_string("Ange namn på varan:");
@@ -285,38 +308,48 @@ tree_key_t get_key(tree_t *tree, int pos)
   return key_list[pos];
 }
 
-void find_shelf_index(list_t *master_list, char *shelf_name)
+int find_shelf_index(list_t *master_list, char *shelf_name)
 {
-  int siz = list_length(master_list);
+  int len = list_length(master_list);
   elem_t *result = NULL;
   shelf_t *shelf = NULL;
-  for (int i = 0; i <= siz; ++i)
+  for (int i = 0; i <= len; ++i)
     {
       list_get(master_list, i, result);
       shelf = elem_to_shelf(result);
       char *compare_shelf = shelf->shelf_name;
       if (compare_letter(shelf_name, compare_shelf) == 0)
         {
-          return true;
+          return i;
         }
     }
-  return false;
+  return 0;
 }
 
 
-void remove_shelf(list_t *list, list_t *master_list, int index, struct action *savestate)
+void remove_shelf(item_t *item, list_t *master_list, int index, struct action *savestate)
 { 
   bool delete = true;
   elem_t *result = NULL;
 
-  edit_save
+  edit_savestate(item, savestate, 2);
   
-  list_remove(list, index, delete);
+  list_remove(item->shelves, index, delete);
   
-  list_get(list, index, result);
+  list_get(item->shelves, index, result);
   shelf_t *shelf = elem_to_shelf(result);
   char *name = shelf->shelf_name;
-  find_shelf_index(master_list, name);
+  int index_master_list = find_shelf_index(master_list, name);
+  list_remove(master_list, index_master_list, delete);
+  
+}
+
+void free_item(item_t *item, struct action *savestate)
+{
+  edit_savestate(item, savestate, 2);
+  
+  free(item->desc);
+  list_delete(item->shelves, true);
   
 }
 
@@ -337,11 +370,11 @@ void delete_item_shelf(item_t *item, list_t *master_list, struct action *savesta
             }
         }
       while (shelf > len);
-      remove_shelf(item->shelves, master_list, delete_num, savestate);
+      remove_shelf(item, master_list, delete_num, savestate);
     }
   else
     {
-      free_item();
+      free_item(item, savestate);
     }
 }
 
@@ -366,6 +399,7 @@ tree_t delete_item(tree_t *tree, list_t *master_list, struct action *savestate)
   item_t *delete_item = elem_to_item(result);
   printf("%s finns på följade platser:\n", key_name);
   delete_item_shelf(delete_item, master_list, savestate);
+  
   
 }
 
