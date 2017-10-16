@@ -8,7 +8,7 @@
 #include "tree.h"
 #include "list.h"
 #include "common.h"
-#include "db.h"
+// #include "db.h"
 
 typedef struct shelf shelf_t;
 
@@ -104,41 +104,50 @@ int compare_letter(char *first_string, char *second_string)
   return strcmp(f, s);
 }
 
+elem_t *shelf_copy(elem_t *elem)
+{
+  shelf_t *shelf_tmp  = elem_to_shelf(elem);
+  shelf_t *shelf_copy = calloc(1, sizeof(shelf_t));
+      
+  shelf_copy->shelf_name = shelf_tmp->shelf_name;
+  shelf_copy->amount = shelf_tmp->amount;
+
+  elem_t *elem_shelf_copy = shelf_to_elem(shelf_copy);
+  return elem_shelf_copy;
+}
 
 // TODO
-void free_elem_list(list_t *list)
+void free_elem(list_t *list)
 {
   free(list);
 }
 
+void free_key(tree_key_t key)
+{
+  
+}
+
 item_t copy_item(item_t *item)
 {
-  item_t *item_copy = calloc(1, sizeof(struct item));
+  item_t *item_copy = calloc(1, sizeof(item_t));
   
   item_copy->desc = item->desc;
   item_copy->price = item->price;
 
-  list_t *list_copy = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *list_copy = list_new((element_copy_fun) shelf_copy, (element_free_fun) free_elem, (element_comp_fun) compare_letter);
   int siz = list_length(item->shelves);
 
   elem_t *result = NULL;
-  shelf_t *tmp = NULL;
   
   for (int i = 0; i < siz; ++i)
     {
-      list_get(item->shelves, i + 1, result);
-      tmp = elem_to_shelf(result);
-      shelf_t *shelf_copy = calloc(1, sizeof(shelf_t));
-      
-      shelf_copy->shelf_name = tmp->shelf_name;
-      shelf_copy->amount = tmp->amount;
-
-      elem_t *elem_shelf_copy = shelf_to_elem(shelf_copy);
-      list_append(list_copy, *elem_shelf_copy);
+     list_get(item->shelves, i + 1, result);
+     elem_t *elem_shelf_copy = shelf_copy(result);
+     list_append(list_copy, *elem_shelf_copy);
     }
   
   item_copy->shelves = list_copy;
-
+  
   return *item_copy;
 }
 
@@ -152,7 +161,7 @@ void edit_savestate(item_t *item, struct action *savestate, int type)
 
 shelf_t *make_shelf(char *shelf, int amount)
 {
-  shelf_t *new_shelf = calloc(1, sizeof(struct shelf));
+  shelf_t *new_shelf = calloc(1, sizeof(shelf_t));
   new_shelf->shelf_name = shelf;
   new_shelf->amount = amount;
   return new_shelf;
@@ -160,7 +169,7 @@ shelf_t *make_shelf(char *shelf, int amount)
 
 item_t *make_item(char *desc, int price, list_t *shelves)
 {
-  item_t *item = calloc(1, sizeof(struct item));
+  item_t *item = calloc(1, sizeof(item_t));
   item->desc = desc;
   item->price = price;
   item->shelves = shelves;
@@ -257,7 +266,7 @@ tree_t *ask_question_new_item(tree_t *tree, list_t *master_list)
   char *hylla = calloc(1, sizeof(char));
   shelf_t *shelf = calloc(1, sizeof(struct shelf));
   item_t *item = calloc(1, sizeof(struct item));
-  list_t *shelves = list_new((element_copy_fun) copy_item,(element_free_fun) free,(element_comp_fun) compare_letter);
+  list_t *shelves = list_new((element_copy_fun) list_copy,(element_free_fun) free,(element_comp_fun) compare_letter);
 
   char *name = calloc(1, sizeof(char));
   name = ask_question_string("Ange namn på varan:");
@@ -752,7 +761,7 @@ void event_loop(tree_t *tree, list_t *master_list)
 
 int main()
 {
-  tree_t *tree = tree_new((element_copy_fun) element_copy, (key_free_fun) key_free, (element_free_fun) elem_free, (element_comp_fun) compare_letter);
+  tree_t *tree = tree_new((element_copy_fun) copy_item, (key_free_fun) key_free, (element_free_fun) elem_free, (element_comp_fun) compare_letter);
   list_t *master_list = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
 
   list_t *shelf_for_item1 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
@@ -1026,29 +1035,80 @@ int main()
 
   char *key5 = "handväska";
   elem_t *elem_key5 = char_to_elem(key5);
+
+  char *key6 = "sudd";
+  elem_t *elem_key6 = char_to_elem(key6);
+
+  char *key7 = "penna";
+  elem_t *elem_key7 = char_to_elem(key7);
+
+  char *key8 = "strumpor";
+  elem_t *elem_key8 = char_to_elem(key8);
+
+  char *key9 = "jeans";
+  elem_t *elem_key9 = char_to_elem(key9);
+
+  char *key10 = "regnjacka";
+  elem_t *elem_key10 = char_to_elem(key10);
+
+  char *key11 = "pyjamas";
+  elem_t *elem_key11 = char_to_elem(key11);
+
+  char *key12 = "tofflor";
+  elem_t *elem_key12 = char_to_elem(key12);
+
+  char *key13 = "örngott";
+  elem_t *elem_key13 = char_to_elem(key13);
+
+  char *key14 = "toapapper";
+  elem_t *elem_key14 = char_to_elem(key14);
+
+  char *key15 = "schampoo";
+  elem_t *elem_key15 = char_to_elem(key15);
+
+  char *key16 = "handduk";
+  elem_t *elem_key16 = char_to_elem(key16);
+
+  char *key17 = "dator";
+  elem_t *elem_key17 = char_to_elem(key17);
+
+  char *key18 = "tv";
+  elem_t *elem_key18 = char_to_elem(key18);
+
+  char *key19 = "skrivbord";
+  elem_t *elem_key19 = char_to_elem(key19);
+
+  char *key20 = "matbord";
+  elem_t *elem_key20 = char_to_elem(key20);
+
+  char *key21 = "brödrost";
+  elem_t *elem_key21 = char_to_elem(key21);
+
+  char *key22 = "vattenkokare";
+  elem_t *elem_key22 = char_to_elem(key22);
   
   tree_insert(tree, *elem_key1, *elem_item1);
-  tree_insert(tree, "barnbok", item2);
-  tree_insert(tree, "keyboard", item3);
-  tree_insert(tree, "plånbok", item4);
-  tree_insert(tree, "handväska", item5);
-  tree_insert(tree, "sudd", item6);
-  tree_insert(tree, "penna", item7);
-  tree_insert(tree, "strumpor", item8);
-  tree_insert(tree, "jeans", item9);
-  tree_insert(tree, "regnjacka", item10);
-  tree_insert(tree, "pyjamas", item11);
-  tree_insert(tree, "tofflor", item12);
-  tree_insert(tree, "örngott", item13);
-  tree_insert(tree, "toapapper", item14);
-  tree_insert(tree, "schampoo", item15);
-  tree_insert(tree, "handduk", item16);
-  tree_insert(tree, "dator", item17);
-  tree_insert(tree, "tv", item18);
-  tree_insert(tree, "skrivbord", item19);
-  tree_insert(tree, "matbord", item20);
-  tree_insert(tree, "brödrost", item21);
-  tree_insert(tree, "vattenkokare", item22);
+  tree_insert(tree, *elem_key2, *elem_item2);
+  tree_insert(tree, *elem_key3, *elem_item3);
+  tree_insert(tree, *elem_key4, *elem_item4);
+  tree_insert(tree, *elem_key5, *elem_item5);
+  tree_insert(tree, *elem_key6, *elem_item6);
+  tree_insert(tree, *elem_key7, *elem_item7);
+  tree_insert(tree, *elem_key8, *elem_item8);
+  tree_insert(tree, *elem_key9, *elem_item9);
+  tree_insert(tree, *elem_key10, *elem_item10);
+  tree_insert(tree, *elem_key11, *elem_item11);
+  tree_insert(tree, *elem_key12, *elem_item12);
+  tree_insert(tree, *elem_key13, *elem_item13);
+  tree_insert(tree, *elem_key14, *elem_item14);
+  tree_insert(tree, *elem_key15, *elem_item15);
+  tree_insert(tree, *elem_key16, *elem_item16);
+  tree_insert(tree, *elem_key17, *elem_item17);
+  tree_insert(tree, *elem_key18, *elem_item18);
+  tree_insert(tree, *elem_key19, *elem_item19);
+  tree_insert(tree, *elem_key20, *elem_item20);
+  tree_insert(tree, *elem_key21, *elem_item21);
+  tree_insert(tree, *elem_key22, *elem_item22);
   
   event_loop(tree, master_list);
   return 0;

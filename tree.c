@@ -13,12 +13,7 @@ struct node
 {
   tree_key_t key;
   elem_t elem;
-  
-  key_free_fun key_free;
-  element_free_fun elem_free;
-  element_comp_fun comp;
-  element_copy_fun copy;
-  
+    
   node_t *left;
   node_t *right;
 };
@@ -26,33 +21,38 @@ struct node
 struct tree
 {
   node_t *root;
+  
+  key_free_fun key_free;
+  element_free_fun elem_free;
+  element_comp_fun comp;
+  element_copy_fun copy;
 };
 
-tree_t *tree_new(element_copy_fun element_copy, key_free_fun key_free, element_free_fun elem_free, element_comp_fun comp)
+tree_t *tree_new(element_copy_fun elem_copy, key_free_fun key_free, element_free_fun elem_free, element_comp_fun comp)
 {
   tree_t *new = calloc(1, sizeof(tree_t));
-  new->root->copy = element_copy;
-  new->root->key_free = key_free;
-  new->root->elem_free = elem_free;
-  new->root->comp = comp;
+  new->copy = elem_copy;
+  new->key_free = key_free;
+  new->elem_free = elem_free;
+  new->comp = comp;
   return new;
 }
 
-void node_delete(node_t *node, bool delete_keys, bool delete_elements)
+void node_delete(tree_t *tree, node_t *node, bool delete_keys, bool delete_elements)
 {
-  if (delete_keys == true)
+  if (delete_keys == true && delete_elements == true)
     {
-      node_delete(node->left, delete_keys, delete_elements);
-      node_delete(node->right, delete_keys, delete_elements);
-      node->key_free(node->key);
-      node->elem_free(node->elem);
+      node_delete(tree, node->left, delete_keys, delete_elements);
+      node_delete(tree, node->right, delete_keys, delete_elements);
+      tree->key_free(node->key);
+      tree->elem_free(node->elem);
     }
 }
 
 
 void tree_delete(tree_t *tree, bool delete_keys, bool delete_elements)
 {
-  node_delete(tree->root, delete_keys, delete_elements);
+  node_delete(tree, tree->root, delete_keys, delete_elements);
 }
 
 
@@ -111,44 +111,44 @@ int tree_depth(tree_t *tree)
   return depth;
 }
 
-node_t *create_node(tree_key_t key, elem_t elem)
+node_t *create_node(tree_t *tree, tree_key_t key, elem_t elem)
 {
   node_t *tmp = (node_t *)calloc(1, sizeof(node_t));
-  tmp->key = key;
-  tmp->elem = elem;
+  tmp->key = tree->copy(key);
+  tmp->elem = tree->copy(elem);
   return tmp;
 }
 
-bool node_insert(node_t *node, tree_key_t key, elem_t elem)
+bool node_insert(tree_t *tree, node_t *node, tree_key_t key, elem_t elem)
 {
-  if (node->comp(node->key, key) == true && node->comp != NULL)
+  if (tree->comp(node->key, key) == true && tree->comp != NULL)
     {
       return false;
     }
-  if (node->comp != NULL)
+  if (tree->comp != NULL)
     {
-      if (node->comp(key, node->key) > 0)
+      if (tree->comp(key, node->key) > 0)
         {
           if (node->right == NULL)
             {
-              node->right = create_node(key, elem);
+              node->right = create_node(tree, key, elem);
               return true;
             }
           else
             {
-              return node_insert(node->right, key, elem);
+              return node_insert(tree, node->right, key, elem);
             }
         }
       else
         {
           if (node->left == NULL)
             {
-              node->left = create_node(key, elem);
+              node->left = create_node(tree, key, elem);
               return true;
             }
           else
             {
-              return node_insert(node->left, key, elem);
+              return node_insert(tree, node->left, key, elem);
             }
         }
     }
@@ -165,66 +165,66 @@ bool tree_insert(tree_t *tree, tree_key_t key, elem_t elem)
     }
   else if (tree->root == NULL)
     {
-      tree->root = create_node(key, elem);
+      tree->root = create_node(tree, key, elem);
       return true;
     }
   else
     {
-      return node_insert(tree->root, key, elem);
+      return node_insert(tree, tree->root, key, elem);
     }
 }
 
-bool node_has_key(node_t *node, tree_key_t key)
+bool node_has_key(tree_t *tree, node_t *node, tree_key_t key)
 {
   if (node == NULL)
     {
       return false;
     }
-  if (node->comp(node->key, key) == true)
+  if (tree->comp(node->key, key) == true)
     {
       return true;
     }
-  else if (node->comp(key, node->key) > 0)
+  else if (tree->comp(key, node->key) > 0)
     {
-      return node_has_key(node->right, key);
+      return node_has_key(tree, node->right, key);
     }
   else
     {
-      return node_has_key(node->left, key);
+      return node_has_key(tree, node->left, key);
     }
 }
 
 bool tree_has_key(tree_t *tree, tree_key_t key)
 {
-  return node_has_key(tree->root, key);
+  return node_has_key(tree, tree->root, key);
 }
 
-bool node_get(node_t *node, tree_key_t key, elem_t *result)
+bool node_get(tree_t *tree, node_t *node, tree_key_t key, elem_t *result)
 {
   if (!node)
     {
       return false;
     }
-  else if (node->comp(node->key, key) == true)
+  else if (tree->comp(node->key, key) == true)
     {
       result = calloc(1, sizeof(elem_t));
       result = &node->elem;
       return true;
     }
-  else if (node->comp(key, node->key) > 0)
+  else if (tree->comp(key, node->key) > 0)
     {
-      return node_get(node->right, key, result);
+      return node_get(tree, node->right, key, result);
     }
   else
     {
-      return node_get(node->left, key, result);
+      return node_get(tree, node->left, key, result);
     }
 }
 
 
 bool tree_get(tree_t *tree, tree_key_t key, elem_t *result)
 {
-  return node_get(tree->root, key, result);
+  return node_get(tree, tree->root, key, result);
 }
 
 
@@ -285,19 +285,19 @@ node_t *min_node(node_t *node)
     return current;
 }
 
-node_t *node_remove(node_t *node, tree_key_t key)
+node_t *node_remove(tree_t *tree, node_t *node, tree_key_t key)
 {
   if (node == NULL) 
     {
       return node;
     }
-  if (node->comp(key, node->key) < 0)
+  if (tree->comp(key, node->key) < 0)
     {
-      node->left = node_remove(node->left, key);
+      node->left = node_remove(tree, node->left, key);
     }
-  else if (node->comp(key, node->key) > 0)
+  else if (tree->comp(key, node->key) > 0)
     {
-      node->right = node_remove(node->right, key);
+      node->right = node_remove(tree, node->right, key);
     }
   else
     {
@@ -316,7 +316,7 @@ node_t *node_remove(node_t *node, tree_key_t key)
       node_t *tmp = min_node(node->left);
       node->key = tmp->key;
       node->elem = tmp->elem;
-      node->left = node_remove(node->left, tmp->key);       
+      node->left = node_remove(tree, node->left, tmp->key);       
     }
   return node;
 }
@@ -326,7 +326,7 @@ bool tree_remove(tree_t *tree, tree_key_t key, elem_t *result)
   bool tree_exist = tree_get(tree, key, result);
   if (tree_exist)
     {
-      tree->root = node_remove(tree->root, key);
+      tree->root = node_remove(tree, tree->root, key);
       return tree_exist;
     }
   return tree_exist;
@@ -413,14 +413,14 @@ bool tree_apply(tree_t *tree, enum tree_order order, key_elem_apply_fun fun, voi
 }
 
 
-void tree_sort_aux(node_t *node, tree_key_t *keys, elem_t *elements, int siz)
+void tree_sort_aux(tree_t *tree, node_t *node, tree_key_t *keys, elem_t *elements, int siz)
 {
   if (siz == 0)
     {
-      node->key_free(node->key);
-      node->elem_free(node->elem);
-      node_delete(node->left, node->key_free, node->elem_free);
-      node_delete(node->right, node->key_free, node->elem_free);
+      tree->key_free(node->key);
+      tree->elem_free(node->elem);
+      node_delete(tree, node->left, true, true);
+      node_delete(tree, node->right, true, true);
     }
 
   else
@@ -433,7 +433,7 @@ void tree_sort_aux(node_t *node, tree_key_t *keys, elem_t *elements, int siz)
   
       tree_key_t first_half_key[half-1];
       elem_t     first_half_elem[half-1];
-      for(i; i <= half-1; ++i)
+      for(; i <= half-1; ++i)
         {
           first_half_key[i] = keys[i];
           first_half_elem[i] = elements[i];
@@ -449,8 +449,8 @@ void tree_sort_aux(node_t *node, tree_key_t *keys, elem_t *elements, int siz)
 
       node->key = middle_key;
       node->elem = middle_elem;
-      tree_sort_aux(node->left, first_half_key, first_half_elem, half-1);
-      tree_sort_aux(node->left, second_half_key, second_half_elem, siz-half);
+      tree_sort_aux(tree, node->left, first_half_key, first_half_elem, half-1);
+      tree_sort_aux(tree, node->left, second_half_key, second_half_elem, siz-half);
     }
 }
 
@@ -464,7 +464,7 @@ void tree_sort(tree_t *tree)
     }
   if (tree_depth(tree) > round(sqrt_tree) + round_up)
     {
-      tree_sort_aux(tree->root, tree_keys(tree), tree_elements(tree), tree_size(tree));
+      tree_sort_aux(tree, tree->root, tree_keys(tree), tree_elements(tree), tree_size(tree));
     }
   else
     {
