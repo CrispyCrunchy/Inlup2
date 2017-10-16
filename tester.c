@@ -116,25 +116,21 @@ elem_t *shelf_copy(elem_t *elem)
   return elem_shelf_copy;
 }
 
-// TODO
-void free_elem(list_t *list)
+void shelf_free(elem_t *elem)
 {
-  free(list);
+  shelf_t *shelf = elem_to_shelf(elem);
+  free(shelf->shelf_name);
 }
 
-void free_key(tree_key_t key)
+elem_t item_copy(elem_t *elem)
 {
-  
-}
-
-item_t copy_item(item_t *item)
-{
+  item_t *item = elem_to_item(elem);
   item_t *item_copy = calloc(1, sizeof(item_t));
   
   item_copy->desc = item->desc;
   item_copy->price = item->price;
 
-  list_t *list_copy = list_new((element_copy_fun) shelf_copy, (element_free_fun) free_elem, (element_comp_fun) compare_letter);
+  list_t *list_copy = list_new((element_copy_fun) shelf_copy, (element_free_fun) shelf_free, (element_comp_fun) compare_letter);
   int siz = list_length(item->shelves);
 
   elem_t *result = NULL;
@@ -147,15 +143,34 @@ item_t copy_item(item_t *item)
     }
   
   item_copy->shelves = list_copy;
+
+  elem_t *elem_item_copy = item_to_elem(item_copy);
   
-  return *item_copy;
+  return *elem_item_copy;
 }
 
+void key_free(tree_key_t key)
+{
+  elem_t *pointer = &key;
+  free(pointer);
+}
+
+void item_free(elem_t *elem)
+{
+  item_t *item = elem_to_item(elem);
+  free(item->desc);
+  list_delete(item->shelves, true);
+}
 
 void edit_savestate(item_t *item, struct action *savestate, int type)
 {  
   savestate->type = type;
-  savestate->copy = copy_item(item);
+  
+  elem_t *elem = item_to_elem(item);
+  *elem = item_copy(elem);
+  item_t *item_copy = elem_to_item(elem);
+  savestate->copy = *item_copy;
+  
   savestate->orig = item;  
 }
 
@@ -266,7 +281,7 @@ tree_t *ask_question_new_item(tree_t *tree, list_t *master_list)
   char *hylla = calloc(1, sizeof(char));
   shelf_t *shelf = calloc(1, sizeof(struct shelf));
   item_t *item = calloc(1, sizeof(struct item));
-  list_t *shelves = list_new((element_copy_fun) list_copy,(element_free_fun) free,(element_comp_fun) compare_letter);
+  list_t *shelves = list_new((element_copy_fun) shelf_copy,(element_free_fun) free,(element_comp_fun) compare_letter);
 
   char *name = calloc(1, sizeof(char));
   name = ask_question_string("Ange namn på varan:");
@@ -664,7 +679,7 @@ tree_t *edit_storage(tree_t *tree, list_t *master_list, struct action *savestate
 return tree;
 }
 
-void undo_change(tree_t *tree, struct action *savestate)
+void undo_change(struct action *savestate)
 {
   if (savestate->type == 0)
     {
@@ -672,7 +687,7 @@ void undo_change(tree_t *tree, struct action *savestate)
     }
   else if (savestate->type == 1)
     {
-      elem_t *result = NULL;
+      /*elem_t *result = NULL;
       elem_t *elem_orig = item_to_elem(savestate->orig);
 
       tree_remove(tree, *elem_orig, result);
@@ -681,6 +696,7 @@ void undo_change(tree_t *tree, struct action *savestate)
   
       free(item->desc);
       list_delete(item->shelves, true);
+      */
    
       savestate->type = 0;
     }
@@ -735,7 +751,7 @@ void event_loop(tree_t *tree, list_t *master_list)
         }
       else if (input == 'G'|| input == 'g')
         {
-          undo_change(tree, savestate);
+          undo_change(savestate);
         }
       else if (input == 'H'|| input == 'h')
         {
@@ -761,10 +777,10 @@ void event_loop(tree_t *tree, list_t *master_list)
 
 int main()
 {
-  tree_t *tree = tree_new((element_copy_fun) copy_item, (key_free_fun) key_free, (element_free_fun) elem_free, (element_comp_fun) compare_letter);
-  list_t *master_list = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  tree_t *tree = tree_new((element_copy_fun) item_copy, (key_free_fun) key_free, (element_free_fun) item_free, (element_comp_fun) compare_letter);
+  list_t *master_list = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
 
-  list_t *shelf_for_item1 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item1 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item1_shelf1 = make_shelf("A2", 4);
   shelf_t *item1_shelf2 = make_shelf("K12", 9);
   elem_t *elem_item1_shelf1 = shelf_to_elem(item1_shelf1);
@@ -776,7 +792,7 @@ int main()
   item_t *item1 = make_item("grön", 50, shelf_for_item1);
   elem_t *elem_item1 = item_to_elem(item1);
 
-  list_t *shelf_for_item2 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item2 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item2_shelf1 = make_shelf("L12", 14);
   shelf_t *item2_shelf2 = make_shelf("S22", 4);
   elem_t *elem_item2_shelf1 = shelf_to_elem(item2_shelf1);
@@ -788,7 +804,7 @@ int main()
   item_t *item2 = make_item("lättläst", 100, shelf_for_item2);
   elem_t *elem_item2 = item_to_elem(item2);
   
-  list_t *shelf_for_item3 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item3 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item3_shelf1 = make_shelf("D2", 21);
   elem_t *elem_item3_shelf1 = shelf_to_elem(item3_shelf1);
   list_append(shelf_for_item3, *elem_item3_shelf1);
@@ -796,7 +812,7 @@ int main()
   item_t *item3 = make_item("självlysande", 5000, shelf_for_item3);
   elem_t *elem_item3 = item_to_elem(item3);
 
-  list_t *shelf_for_item4 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item4 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item4_shelf1 = make_shelf("W32", 34);
   shelf_t *item4_shelf2 = make_shelf("A1", 4);
   elem_t *elem_item4_shelf1 = shelf_to_elem(item4_shelf1);
@@ -808,7 +824,7 @@ int main()
   item_t *item4 = make_item("svart", 100, shelf_for_item4);
   elem_t *elem_item4 = item_to_elem(item4);
 
-  list_t *shelf_for_item5 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item5 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item5_shelf1 = make_shelf("H8", 34);
   shelf_t *item5_shelf2 = make_shelf("F21", 4);
   elem_t *elem_item5_shelf1 = shelf_to_elem(item5_shelf1);
@@ -820,7 +836,7 @@ int main()
   item_t *item5 = make_item("stor", 100, shelf_for_item5);
   elem_t *elem_item5 = item_to_elem(item5);
 
-  list_t *shelf_for_item6 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item6 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item6_shelf1 = make_shelf("N7", 34);
   shelf_t *item6_shelf2 = make_shelf("S1", 4);
   elem_t *elem_item6_shelf1 = shelf_to_elem(item6_shelf1);
@@ -832,7 +848,7 @@ int main()
   item_t *item6 = make_item("vit", 100, shelf_for_item6);
   elem_t *elem_item6 = item_to_elem(item6);
 
-  list_t *shelf_for_item7 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item7 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item7_shelf1 = make_shelf("G7", 34);
   shelf_t *item7_shelf2 = make_shelf("A31", 4);
   elem_t *elem_item7_shelf1 = shelf_to_elem(item7_shelf1);
@@ -844,7 +860,7 @@ int main()
   item_t *item7 = make_item("bläck", 100, shelf_for_item7);
   elem_t *elem_item7 = item_to_elem(item7);
 
-  list_t *shelf_for_item8 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item8 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item8_shelf1 = make_shelf("I9", 34);
   shelf_t *item8_shelf2 = make_shelf("X21", 4);
   shelf_t *item8_shelf3 = make_shelf("A44", 14);
@@ -860,7 +876,7 @@ int main()
   item_t *item8 = make_item("svarta", 100, shelf_for_item8);
   elem_t *elem_item8 = item_to_elem(item8);
 
-  list_t *shelf_for_item9 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item9 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item9_shelf1 = make_shelf("R7", 34);
   elem_t *elem_item9_shelf1 = shelf_to_elem(item9_shelf1);
   list_append(shelf_for_item9, *elem_item9_shelf1);
@@ -868,7 +884,7 @@ int main()
   item_t *item9 = make_item("blå", 100, shelf_for_item9);
   elem_t *elem_item9 = item_to_elem(item9);
 
-  list_t *shelf_for_item10 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item10 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item10_shelf1 = make_shelf("G62", 34);
   shelf_t *item10_shelf2 = make_shelf("G6", 4);
   elem_t *elem_item10_shelf1 = shelf_to_elem(item10_shelf1);
@@ -880,7 +896,7 @@ int main()
   item_t *item10 = make_item("gul", 100, shelf_for_item10);
   elem_t *elem_item10 = item_to_elem(item10);
 
-  list_t *shelf_for_item11 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item11 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item11_shelf1 = make_shelf("G43", 34);
   shelf_t *item11_shelf2 = make_shelf("Q1", 4);
   elem_t *elem_item11_shelf1 = shelf_to_elem(item11_shelf1);
@@ -892,7 +908,7 @@ int main()
   item_t *item11 = make_item("blommig", 100, shelf_for_item11);
   elem_t *elem_item11 = item_to_elem(item11);
 
-  list_t *shelf_for_item12 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item12 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item12_shelf1 = make_shelf("H5", 34);
   shelf_t *item12_shelf2 = make_shelf("G22", 4);
   elem_t *elem_item12_shelf1 = shelf_to_elem(item12_shelf1);
@@ -904,7 +920,7 @@ int main()
   item_t *item12 = make_item("varma", 100, shelf_for_item12);
   elem_t *elem_item12 = item_to_elem(item12);
 
-  list_t *shelf_for_item13 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item13 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item13_shelf1 = make_shelf("K38", 34);
   shelf_t *item13_shelf2 = make_shelf("P2", 4);
   elem_t *elem_item13_shelf1 = shelf_to_elem(item13_shelf1);
@@ -916,7 +932,7 @@ int main()
   item_t *item13 = make_item("gosigt", 100, shelf_for_item13);
   elem_t *elem_item13 = item_to_elem(item13);
 
-  list_t *shelf_for_item14 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item14 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item14_shelf1 = make_shelf("S44", 34);
   shelf_t *item14_shelf2 = make_shelf("Q6", 4);
   elem_t *elem_item14_shelf1 = shelf_to_elem(item14_shelf1);
@@ -926,7 +942,7 @@ int main()
   item_t *item14 = make_item("blommönster", 100, shelf_for_item14);
   elem_t *elem_item14 = item_to_elem(item14);
 
-  list_t *shelf_for_item15 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item15 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item15_shelf1 = make_shelf("F4", 34);
   shelf_t *item15_shelf2 = make_shelf("Z6", 4);
   elem_t *elem_item15_shelf1 = shelf_to_elem(item15_shelf1);
@@ -938,7 +954,7 @@ int main()
   item_t *item15 = make_item("för torrt hår", 100, shelf_for_item15);
   elem_t *elem_item15 = item_to_elem(item15);
   
-  list_t *shelf_for_item16 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item16 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item16_shelf1 = make_shelf("H55", 34);
   shelf_t *item16_shelf2 = make_shelf("E1", 4);
   elem_t *elem_item16_shelf1 = shelf_to_elem(item16_shelf1);
@@ -950,7 +966,7 @@ int main()
   item_t *item16 = make_item("frotté", 100, shelf_for_item16);
   elem_t *elem_item16 = item_to_elem(item16);
 
-  list_t *shelf_for_item17 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item17 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item17_shelf1 = make_shelf("J7", 34);
   shelf_t *item17_shelf2 = make_shelf("D44", 4);
   elem_t *elem_item17_shelf1 = shelf_to_elem(item17_shelf1);
@@ -962,7 +978,7 @@ int main()
   item_t *item17 = make_item("snabb", 100, shelf_for_item17);
   elem_t *elem_item17 = item_to_elem(item17);
   
-  list_t *shelf_for_item18 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item18 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item18_shelf1 = make_shelf("R9", 34);
   shelf_t *item18_shelf2 = make_shelf("I33", 4);
   elem_t *elem_item18_shelf1 = shelf_to_elem(item18_shelf1);
@@ -974,7 +990,7 @@ int main()
   item_t *item18 = make_item("stor", 100, shelf_for_item18);
   elem_t *elem_item18 = item_to_elem(item18);
 
-  list_t *shelf_for_item19 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item19 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item19_shelf1 = make_shelf("K88", 34);
   shelf_t *item19_shelf2 = make_shelf("F65", 4);
   elem_t *elem_item19_shelf1 = shelf_to_elem(item19_shelf1);
@@ -986,7 +1002,7 @@ int main()
   item_t *item19 = make_item("trä", 100, shelf_for_item19);
   elem_t *elem_item19 = item_to_elem(item19);
   
-  list_t *shelf_for_item20 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item20 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item20_shelf1 = make_shelf("S3", 34);
   shelf_t *item20_shelf2 = make_shelf("A99", 4);
   elem_t *elem_item20_shelf1 = shelf_to_elem(item20_shelf1);
@@ -996,7 +1012,7 @@ int main()
   item_t *item20 = make_item("trä", 100, shelf_for_item20);
   elem_t *elem_item20 = item_to_elem(item20);
   
-  list_t *shelf_for_item21 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item21 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item21_shelf1 = make_shelf("A15", 34);
   shelf_t *item21_shelf2 = make_shelf("A29", 4);
   elem_t *elem_item21_shelf1 = shelf_to_elem(item21_shelf1);
@@ -1008,7 +1024,7 @@ int main()
   item_t *item21 = make_item("rostfri", 100, shelf_for_item21);
   elem_t *elem_item21 = item_to_elem(item21);
 
-  list_t *shelf_for_item22 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  list_t *shelf_for_item22 = list_new((element_copy_fun) shelf_copy,(element_free_fun) shelf_free,(element_comp_fun) compare_letter);
   shelf_t *item22_shelf1 = make_shelf("O88", 34);
   shelf_t *item22_shelf2 = make_shelf("U29", 4);
   elem_t *elem_item22_shelf1 = shelf_to_elem(item22_shelf1);
