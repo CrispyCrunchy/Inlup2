@@ -126,4 +126,9 @@ enum tree_order { inorder = 0, preorder = -1, postorder = 1 };
 /// \returns the result of all fun calls, combined with OR (||)
 bool tree_apply(tree_t *tree, enum tree_order order, key_elem_apply_fun fun, void *data);
 
+/// Sorts and balances a given tree as a binary search tree
+/// 
+/// \param tree the tree
+void tree_sort(tree_t *tree);
+
 #endif

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 #include "tree.h"
 #include "common.h"
 
@@ -410,3 +411,65 @@ bool tree_apply(tree_t *tree, enum tree_order order, key_elem_apply_fun fun, voi
     }
   return false;
 }
+
+
+void tree_sort_aux(node_t *node, tree_key_t *keys, elem_t *elements, int siz)
+{
+  if (siz == 0)
+    {
+      node->key_free(node->key);
+      node->elem_free(node->elem);
+      node_delete(node->left, node->key_free, node->elem_free);
+      node_delete(node->right, node->key_free, node->elem_free);
+    }
+
+  else
+    {
+      int i = 0;
+      siz = siz - 1;
+      int half = siz/2;
+      tree_key_t middle_key = keys[half];
+      elem_t middle_elem = elements[half];
+  
+      tree_key_t first_half_key[half-1];
+      elem_t     first_half_elem[half-1];
+      for(i; i <= half-1; ++i)
+        {
+          first_half_key[i] = keys[i];
+          first_half_elem[i] = elements[i];
+        }
+
+      tree_key_t second_half_key[siz-half];
+      elem_t     second_half_elem[siz-half];
+      for(++i; i <= siz; ++i)
+        {
+          second_half_key[i] = keys[i];
+          second_half_elem[i] = elements[i];
+        }
+
+      node->key = middle_key;
+      node->elem = middle_elem;
+      tree_sort_aux(node->left, first_half_key, first_half_elem, half-1);
+      tree_sort_aux(node->left, second_half_key, second_half_elem, siz-half);
+    }
+}
+
+void tree_sort(tree_t *tree)
+{
+  int round_up = 0;
+  float sqrt_tree = sqrt(tree_size(tree) + 1);
+  if (round(sqrt_tree) < sqrt_tree)
+    {
+      round_up = 1;
+    }
+  if (tree_depth(tree) > round(sqrt_tree) + round_up)
+    {
+      tree_sort_aux(tree->root, tree_keys(tree), tree_elements(tree), tree_size(tree));
+    }
+  else
+    {
+      printf("Databasen är redan sorterad!");
+    }
+}
+
+
