@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 #include "utils.h"
 #include "tree.h"
 #include "list.h"
@@ -103,6 +104,8 @@ int compare_letter(char *first_string, char *second_string)
   return strcmp(f, s);
 }
 
+
+// TODO
 void free_elem_list(list_t *list)
 {
   free(list);
@@ -378,7 +381,7 @@ void delete_item_shelf(item_t *item, list_t *master_list, struct action *savesta
     }
 }
 
-tree_t delete_item(tree_t *tree, list_t *master_list, struct action *savestate)
+tree_t *delete_item(tree_t *tree, list_t *master_list, struct action *savestate)
 {
   int page = tree_index(tree);
   int delete_num = 0;
@@ -399,8 +402,306 @@ tree_t delete_item(tree_t *tree, list_t *master_list, struct action *savestate)
   item_t *delete_item = elem_to_item(result);
   printf("%s finns på följade platser:\n", key_name);
   delete_item_shelf(delete_item, master_list, savestate);
+
+  return tree;
+}
+
+void print_shelf_amount(item_t *item)
+{
+  int size = list_length(item->shelves);
+  elem_t *result = NULL;
+  for (int i = 1; i < size + 1; ++i)
+    {
+      list_get(item->shelves, i, result);
+      shelf_t *shelf = elem_to_shelf(result);
+      char *name = shelf->shelf_name;
+      int amount = shelf->amount;
+      printf("Hyllplats: %s\n    Antal: %d\n", name, amount);
+    }
+}
+
+void print_shelf_amount_index(item_t *item)
+{
+  int size = list_length(item->shelves);
+  elem_t *result = NULL;
+  for (int i = 1; i < size + 1; ++i)
+    {
+      list_get(item->shelves, i, result);
+      shelf_t *shelf = elem_to_shelf(result); 
+      char *name = shelf->shelf_name;
+      int amount = shelf->amount;
+      printf("%d. Hyllplats: %s\n       Antal: %d\n", i, name, amount);
+    }
+}
+
+
+tree_key_t print_node(tree_t *tree, int pos)
+{
+  tree_key_t *keys = tree_keys(tree);
   
+  elem_t *elem_items = tree_elements(tree);
+  item_t *items = elem_to_item(elem_items);
   
+  printf("Namn: %s\n", elem_to_char(&keys[pos]));
+  printf("Beskriving: %s\n", items[pos].desc);
+  printf("Pris: %d kr\n", items[pos].price);
+  print_shelf_amount(&items[pos]);  
+  return keys[pos];
+}
+
+
+void edit_desc(tree_t *tree, tree_key_t key, item_t *item, struct action *savestate)
+{
+  char *new_desc = calloc(1, sizeof(char));
+  item_t *new_node = calloc(1, sizeof(item_t));
+  
+  printf("Nuvarande beskrivning: %s\n--------------------------------------------------------\n", item->desc);
+  
+  new_desc = ask_question_string("Ny beskrivning:");
+
+  edit_savestate(item, savestate, 3);
+
+  elem_t *result = NULL;
+  tree_get(tree, key, result);
+  
+  new_node = elem_to_item(result);
+  new_node->desc = new_desc;
+  
+  tree_remove(tree, key, result);
+
+  elem_t *elem_new_node = item_to_elem(new_node);
+  tree_insert(tree, key, *elem_new_node); 
+}
+
+void edit_price(tree_t *tree, tree_key_t key, item_t *item, struct action *savestate)
+{
+  item_t *new_node = calloc(1, sizeof(item_t));
+
+  printf("Nuvarande pris: %d kr\n--------------------------------------------------------\n", item->price);
+  
+  int new_price = ask_question_price("Nytt pris:");
+
+  edit_savestate(item, savestate, 3);
+
+  elem_t *result = NULL;
+  tree_get(tree, key, result);
+
+  new_node = elem_to_item(result);
+  new_node->price = new_price;
+  
+  tree_remove(tree, key, result);
+
+  elem_t *elem_new_node = item_to_elem(new_node);
+  tree_insert(tree, key, *elem_new_node);
+}
+
+void replace_shelf(item_t *item, int shelf, list_t *master_list, struct action *savestate)
+{  
+  char *new_shelf_name = calloc(1, sizeof(char));
+  shelf_t *new_shelf = calloc(1, sizeof(shelf_t));
+  shelf_t *current_shelf = calloc(1, sizeof(shelf_t));
+  elem_t *result = NULL;
+  list_get(item->shelves, shelf, result);
+  current_shelf = elem_to_shelf(result);
+  
+  printf("Nuvarande hylla: %s\n--------------------------------------------------------\n", current_shelf->shelf_name);
+  
+  do
+    {
+      new_shelf_name = ask_question_shelf("Ny hylla:");
+      if (exist_shelf(master_list, new_shelf_name))
+        {
+          printf("Hyllan används redan. Ange en annan hylla.\n ");
+        }
+    }
+  while (exist_shelf(master_list, new_shelf_name));
+
+  edit_savestate(item, savestate, 3);
+
+  // new_shelf = (shelf_t*) list_get(item->shelves, shelf, result);
+  list_get(item->shelves, shelf, result);
+  new_shelf = elem_to_shelf(result);
+  new_shelf->shelf_name = new_shelf_name;   
+}
+
+void edit_shelf(item_t *item, list_t *master_list, struct action *savestate)
+{
+  int size = list_length(item->shelves);
+  int shelf = 0;
+  if (size > 1)
+    {
+      print_shelf(item);
+      do
+        {
+          shelf = ask_question_price("Ange vilken hylla du vill ändra:");
+          if (shelf > size)
+            {
+              printf("Felaktig inmatning; skriv ett nummer i listan.\n");
+            }
+        }
+      while (shelf > size);
+      
+      replace_shelf(item, shelf, master_list, savestate);
+    }
+  else
+    {
+      replace_shelf(item, 0, master_list, savestate); 
+    }
+
+}
+
+void replace_amount(item_t *item, int shelf, struct action *savestate)
+{  
+  shelf_t *new_shelf = calloc(1, sizeof(shelf_t));
+  shelf_t *current_shelf = calloc(1, sizeof(shelf_t));
+
+  elem_t *result = NULL;
+  list_get(item->shelves, shelf, result);
+  current_shelf = elem_to_shelf(result);
+  
+  printf("Nuvarande antal varor på hyllan: %d\n--------------------------------------------------------\n", current_shelf->amount);
+  
+  int new_amount = ask_question_price("Ntt antal:");
+
+  edit_savestate(item, savestate, 3);
+  
+  // newshelf = (shelf_t*) list_get(item->shelves, shelf);
+  list_get(item->shelves, shelf, result);
+  new_shelf = elem_to_shelf(result);
+  new_shelf->amount = new_amount;   
+}
+
+void edit_amount(item_t *item, struct action *savestate)
+{
+  int size = list_length(item->shelves);
+  int shelf = 0;
+  if (size > 1)
+    {
+      print_shelf_amount_index(item);
+      do
+        {
+          shelf = ask_question_price("Ange vilken hylla du vill ändra antalet varor på:");
+          if (shelf > size)
+            {
+              printf("Felaktig inmatning; skriv ett nummer i listan");
+            }
+        }
+      while (shelf > size);
+      
+      replace_amount(item, shelf, savestate);
+    }
+  else
+    {
+      replace_amount(item, 0, savestate); 
+    }
+
+}
+
+
+tree_t *edit_storage(tree_t *tree, list_t *master_list, struct action *savestate)
+{
+  int page = tree_index(tree);
+  int editnum = 0;
+  int size = tree_size(tree);
+  
+  do
+    {
+      editnum = ask_question_price("Ange vilken vara du ändra:");
+      if (editnum > size)
+        {
+          printf("Felaktig inmatning, skriv ett nummer på en vara\n");
+        }
+    }
+  while(editnum < 1 || editnum > size);
+  editnum = editnum - 1 + (page * 20);
+  
+  tree_key_t key = print_node(tree, editnum);
+
+  elem_t *result = NULL;
+  tree_get(tree, key, result);
+
+  item_t *item = elem_to_item(result);
+  
+  char input = ask_question_edit("\n[B]eskrivning\n[P]ris\n[L]agerhylla\nAn[t]al\n\nVälj rad eller [a]vbryt:");
+  if ((input == 'B' || input == 'b'))
+    {
+      edit_desc(tree, key, item, savestate);
+      print_node(tree, editnum);
+      return tree;
+    }
+  if ((input == 'P' || input == 'p'))
+    {
+      edit_price(tree, key, item, savestate);
+      print_node(tree, editnum);
+      return tree;
+    }
+  if ((input == 'L' || input == 'l'))
+    {
+      edit_shelf(item, master_list, savestate);
+      print_node(tree, editnum);
+      return tree;
+    }
+  if ((input == 'T' || input == 't'))
+    {
+      edit_amount(item, savestate);
+      print_node(tree, editnum);
+      return tree;
+    }
+  if ((input == 'A' || input == 'a'))
+    {
+      return tree;
+    }
+  
+return tree;
+}
+
+void undo_change(tree_t *tree, struct action *savestate)
+{
+  if (savestate->type == 0)
+    {
+      printf("Det finns inget att ångra!\n");
+    }
+  else if (savestate->type == 1)
+    {
+      elem_t *result = NULL;
+      elem_t *elem_orig = item_to_elem(savestate->orig);
+
+      tree_remove(tree, *elem_orig, result);
+
+      tree_get(tree, *elem_orig, result);
+  
+      free(item->desc);
+      list_delete(item->shelves, true);
+   
+      savestate->type = 0;
+    }
+  else if (savestate->type == 2)
+    {
+      
+    }
+  else if (savestate->type == 3)
+    {
+      *(savestate->orig) = savestate->copy;
+      savestate->type = 0;
+    }
+}
+
+void is_tree_sorted(tree_t *tree)
+{
+  int round_up = 0;
+  float sqrt_tree = sqrt(tree_size(tree) + 1);
+  if (round(sqrt_tree) < sqrt_tree)
+    {
+      round_up = 1;
+    }
+  if (tree_depth(tree) > round(sqrt_tree) + round_up)
+    {
+      printf("Databasen är ej sorterad\n");
+    }
+  else
+    {
+      printf("Databasen är sorterad!\n");
+    }
 }
 
 void event_loop(tree_t *tree, list_t *master_list)
@@ -417,7 +718,7 @@ void event_loop(tree_t *tree, list_t *master_list)
         }
       else if (input == 'T'|| input == 't')
         {
-          tree = delete_item();
+          tree = delete_item(tree, master_list, savestate);
         }
       else if (input == 'R'|| input == 'r')
         {
@@ -425,7 +726,7 @@ void event_loop(tree_t *tree, list_t *master_list)
         }
       else if (input == 'G'|| input == 'g')
         {
-          undo_change(savestate);
+          undo_change(tree, savestate);
         }
       else if (input == 'H'|| input == 'h')
         {
@@ -433,11 +734,12 @@ void event_loop(tree_t *tree, list_t *master_list)
         }
        else if (input == 'S'|| input == 's')
         {
-          tree = sort_tree();
+          tree_sort(tree);
+          savestate->type = 0;
         }
       else if (input == 'K'|| input == 'k')
         {
-          is_tree_sorted();
+          is_tree_sorted(tree);
         }
       else if (input == 'A'|| input == 'a')
         {
@@ -445,4 +747,310 @@ void event_loop(tree_t *tree, list_t *master_list)
         }
     }
   return;  
+}
+
+
+int main()
+{
+  tree_t *tree = tree_new((element_copy_fun) element_copy, (key_free_fun) key_free, (element_free_fun) elem_free, (element_comp_fun) compare_letter);
+  list_t *master_list = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+
+  list_t *shelf_for_item1 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item1_shelf1 = make_shelf("A2", 4);
+  shelf_t *item1_shelf2 = make_shelf("K12", 9);
+  elem_t *elem_item1_shelf1 = shelf_to_elem(item1_shelf1);
+  elem_t *elem_item1_shelf2 = shelf_to_elem(item1_shelf2);
+  list_append(shelf_for_item1, *elem_item1_shelf1);
+  list_append(master_list, *elem_item1_shelf1);
+  list_append(shelf_for_item1, *elem_item1_shelf2);
+  list_append(master_list, *elem_item1_shelf2);
+  item_t *item1 = make_item("grön", 50, shelf_for_item1);
+  elem_t *elem_item1 = item_to_elem(item1);
+
+  list_t *shelf_for_item2 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item2_shelf1 = make_shelf("L12", 14);
+  shelf_t *item2_shelf2 = make_shelf("S22", 4);
+  elem_t *elem_item2_shelf1 = shelf_to_elem(item2_shelf1);
+  elem_t *elem_item2_shelf2 = shelf_to_elem(item2_shelf2);
+  list_append(shelf_for_item2, *elem_item2_shelf1);
+  list_append(master_list, *elem_item2_shelf1);
+  list_append(shelf_for_item2, *elem_item2_shelf2);
+  list_append(master_list, *elem_item2_shelf2);
+  item_t *item2 = make_item("lättläst", 100, shelf_for_item2);
+  elem_t *elem_item2 = item_to_elem(item2);
+  
+  list_t *shelf_for_item3 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item3_shelf1 = make_shelf("D2", 21);
+  elem_t *elem_item3_shelf1 = shelf_to_elem(item3_shelf1);
+  list_append(shelf_for_item3, *elem_item3_shelf1);
+  list_append(master_list, *elem_item3_shelf1);
+  item_t *item3 = make_item("självlysande", 5000, shelf_for_item3);
+  elem_t *elem_item3 = item_to_elem(item3);
+
+  list_t *shelf_for_item4 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item4_shelf1 = make_shelf("W32", 34);
+  shelf_t *item4_shelf2 = make_shelf("A1", 4);
+  elem_t *elem_item4_shelf1 = shelf_to_elem(item4_shelf1);
+  elem_t *elem_item4_shelf2 = shelf_to_elem(item4_shelf2);
+  list_append(shelf_for_item4, *elem_item4_shelf1);
+  list_append(master_list, *elem_item4_shelf1);
+  list_append(shelf_for_item4, *elem_item4_shelf2);
+  list_append(master_list, *elem_item4_shelf2);
+  item_t *item4 = make_item("svart", 100, shelf_for_item4);
+  elem_t *elem_item4 = item_to_elem(item4);
+
+  list_t *shelf_for_item5 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item5_shelf1 = make_shelf("H8", 34);
+  shelf_t *item5_shelf2 = make_shelf("F21", 4);
+  elem_t *elem_item5_shelf1 = shelf_to_elem(item5_shelf1);
+  elem_t *elem_item5_shelf2 = shelf_to_elem(item5_shelf2);
+  list_append(shelf_for_item5, *elem_item5_shelf1);
+  list_append(master_list, *elem_item5_shelf1);
+  list_append(shelf_for_item5, *elem_item5_shelf2);
+  list_append(master_list, *elem_item5_shelf2);
+  item_t *item5 = make_item("stor", 100, shelf_for_item5);
+  elem_t *elem_item5 = item_to_elem(item5);
+
+  list_t *shelf_for_item6 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item6_shelf1 = make_shelf("N7", 34);
+  shelf_t *item6_shelf2 = make_shelf("S1", 4);
+  elem_t *elem_item6_shelf1 = shelf_to_elem(item6_shelf1);
+  elem_t *elem_item6_shelf2 = shelf_to_elem(item6_shelf2);
+  list_append(shelf_for_item6, *elem_item6_shelf1);
+  list_append(master_list, *elem_item6_shelf1);
+  list_append(shelf_for_item6, *elem_item6_shelf2);
+  list_append(master_list, *elem_item6_shelf2);
+  item_t *item6 = make_item("vit", 100, shelf_for_item6);
+  elem_t *elem_item6 = item_to_elem(item6);
+
+  list_t *shelf_for_item7 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item7_shelf1 = make_shelf("G7", 34);
+  shelf_t *item7_shelf2 = make_shelf("A31", 4);
+  elem_t *elem_item7_shelf1 = shelf_to_elem(item7_shelf1);
+  elem_t *elem_item7_shelf2 = shelf_to_elem(item7_shelf2);
+  list_append(shelf_for_item7, *elem_item7_shelf1);
+  list_append(master_list, *elem_item7_shelf1);
+  list_append(shelf_for_item7, *elem_item7_shelf2);
+  list_append(master_list, *elem_item7_shelf2);
+  item_t *item7 = make_item("bläck", 100, shelf_for_item7);
+  elem_t *elem_item7 = item_to_elem(item7);
+
+  list_t *shelf_for_item8 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item8_shelf1 = make_shelf("I9", 34);
+  shelf_t *item8_shelf2 = make_shelf("X21", 4);
+  shelf_t *item8_shelf3 = make_shelf("A44", 14);
+  elem_t *elem_item8_shelf1 = shelf_to_elem(item8_shelf1);
+  elem_t *elem_item8_shelf2 = shelf_to_elem(item8_shelf2);
+  elem_t *elem_item8_shelf3 = shelf_to_elem(item8_shelf3);
+  list_append(shelf_for_item8, *elem_item8_shelf1);
+  list_append(shelf_for_item8, *elem_item8_shelf2);
+  list_append(shelf_for_item8, *elem_item8_shelf3);
+  list_append(master_list, *elem_item8_shelf1);
+  list_append(master_list, *elem_item8_shelf2);
+  list_append(master_list, *elem_item8_shelf3);
+  item_t *item8 = make_item("svarta", 100, shelf_for_item8);
+  elem_t *elem_item8 = item_to_elem(item8);
+
+  list_t *shelf_for_item9 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item9_shelf1 = make_shelf("R7", 34);
+  elem_t *elem_item9_shelf1 = shelf_to_elem(item9_shelf1);
+  list_append(shelf_for_item9, *elem_item9_shelf1);
+  list_append(master_list, *elem_item9_shelf1);
+  item_t *item9 = make_item("blå", 100, shelf_for_item9);
+  elem_t *elem_item9 = item_to_elem(item9);
+
+  list_t *shelf_for_item10 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item10_shelf1 = make_shelf("G62", 34);
+  shelf_t *item10_shelf2 = make_shelf("G6", 4);
+  elem_t *elem_item10_shelf1 = shelf_to_elem(item10_shelf1);
+  elem_t *elem_item10_shelf2 = shelf_to_elem(item10_shelf2);
+  list_append(shelf_for_item10, *elem_item10_shelf1);
+  list_append(shelf_for_item10, *elem_item10_shelf2);
+  list_append(master_list, *elem_item10_shelf1);
+  list_append(master_list, *elem_item10_shelf2);
+  item_t *item10 = make_item("gul", 100, shelf_for_item10);
+  elem_t *elem_item10 = item_to_elem(item10);
+
+  list_t *shelf_for_item11 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item11_shelf1 = make_shelf("G43", 34);
+  shelf_t *item11_shelf2 = make_shelf("Q1", 4);
+  elem_t *elem_item11_shelf1 = shelf_to_elem(item11_shelf1);
+  elem_t *elem_item11_shelf2 = shelf_to_elem(item11_shelf2);
+  list_append(shelf_for_item11, *elem_item11_shelf1);
+  list_append(shelf_for_item11, *elem_item11_shelf2);
+  list_append(master_list, *elem_item11_shelf1);
+  list_append(master_list, *elem_item11_shelf2);
+  item_t *item11 = make_item("blommig", 100, shelf_for_item11);
+  elem_t *elem_item11 = item_to_elem(item11);
+
+  list_t *shelf_for_item12 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item12_shelf1 = make_shelf("H5", 34);
+  shelf_t *item12_shelf2 = make_shelf("G22", 4);
+  elem_t *elem_item12_shelf1 = shelf_to_elem(item12_shelf1);
+  elem_t *elem_item12_shelf2 = shelf_to_elem(item12_shelf2);
+  list_append(shelf_for_item12, *elem_item12_shelf1);
+  list_append(shelf_for_item12, *elem_item12_shelf2);
+  list_append(master_list, *elem_item12_shelf1);
+  list_append(master_list, *elem_item12_shelf2);
+  item_t *item12 = make_item("varma", 100, shelf_for_item12);
+  elem_t *elem_item12 = item_to_elem(item12);
+
+  list_t *shelf_for_item13 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item13_shelf1 = make_shelf("K38", 34);
+  shelf_t *item13_shelf2 = make_shelf("P2", 4);
+  elem_t *elem_item13_shelf1 = shelf_to_elem(item13_shelf1);
+  elem_t *elem_item13_shelf2 = shelf_to_elem(item13_shelf2);
+  list_append(shelf_for_item13, *elem_item13_shelf1);
+  list_append(shelf_for_item13, *elem_item13_shelf2);
+  list_append(master_list, *elem_item13_shelf1);
+  list_append(master_list, *elem_item13_shelf2);
+  item_t *item13 = make_item("gosigt", 100, shelf_for_item13);
+  elem_t *elem_item13 = item_to_elem(item13);
+
+  list_t *shelf_for_item14 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item14_shelf1 = make_shelf("S44", 34);
+  shelf_t *item14_shelf2 = make_shelf("Q6", 4);
+  elem_t *elem_item14_shelf1 = shelf_to_elem(item14_shelf1);
+  elem_t *elem_item14_shelf2 = shelf_to_elem(item14_shelf2);
+  list_append(shelf_for_item14, *elem_item14_shelf1);
+  list_append(shelf_for_item14, *elem_item14_shelf2);
+  item_t *item14 = make_item("blommönster", 100, shelf_for_item14);
+  elem_t *elem_item14 = item_to_elem(item14);
+
+  list_t *shelf_for_item15 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item15_shelf1 = make_shelf("F4", 34);
+  shelf_t *item15_shelf2 = make_shelf("Z6", 4);
+  elem_t *elem_item15_shelf1 = shelf_to_elem(item15_shelf1);
+  elem_t *elem_item15_shelf2 = shelf_to_elem(item15_shelf2);
+  list_append(shelf_for_item15, *elem_item15_shelf1);
+  list_append(shelf_for_item15, *elem_item15_shelf2);
+  list_append(master_list, *elem_item15_shelf1);
+  list_append(master_list, *elem_item15_shelf2);
+  item_t *item15 = make_item("för torrt hår", 100, shelf_for_item15);
+  elem_t *elem_item15 = item_to_elem(item15);
+  
+  list_t *shelf_for_item16 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item16_shelf1 = make_shelf("H55", 34);
+  shelf_t *item16_shelf2 = make_shelf("E1", 4);
+  elem_t *elem_item16_shelf1 = shelf_to_elem(item16_shelf1);
+  elem_t *elem_item16_shelf2 = shelf_to_elem(item16_shelf2);
+  list_append(shelf_for_item16, *elem_item16_shelf1);
+  list_append(shelf_for_item16, *elem_item16_shelf2);
+  list_append(master_list, *elem_item16_shelf1);
+  list_append(master_list, *elem_item16_shelf2);
+  item_t *item16 = make_item("frotté", 100, shelf_for_item16);
+  elem_t *elem_item16 = item_to_elem(item16);
+
+  list_t *shelf_for_item17 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item17_shelf1 = make_shelf("J7", 34);
+  shelf_t *item17_shelf2 = make_shelf("D44", 4);
+  elem_t *elem_item17_shelf1 = shelf_to_elem(item17_shelf1);
+  elem_t *elem_item17_shelf2 = shelf_to_elem(item17_shelf2);
+  list_append(shelf_for_item17, *elem_item17_shelf1);
+  list_append(shelf_for_item17, *elem_item17_shelf2);
+  list_append(master_list, *elem_item17_shelf1);
+  list_append(master_list, *elem_item17_shelf2);
+  item_t *item17 = make_item("snabb", 100, shelf_for_item17);
+  elem_t *elem_item17 = item_to_elem(item17);
+  
+  list_t *shelf_for_item18 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item18_shelf1 = make_shelf("R9", 34);
+  shelf_t *item18_shelf2 = make_shelf("I33", 4);
+  elem_t *elem_item18_shelf1 = shelf_to_elem(item18_shelf1);
+  elem_t *elem_item18_shelf2 = shelf_to_elem(item18_shelf2);
+  list_append(shelf_for_item18, *elem_item18_shelf1);
+  list_append(shelf_for_item18, *elem_item18_shelf2);
+  list_append(master_list, *elem_item18_shelf1);
+  list_append(master_list, *elem_item18_shelf2);
+  item_t *item18 = make_item("stor", 100, shelf_for_item18);
+  elem_t *elem_item18 = item_to_elem(item18);
+
+  list_t *shelf_for_item19 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item19_shelf1 = make_shelf("K88", 34);
+  shelf_t *item19_shelf2 = make_shelf("F65", 4);
+  elem_t *elem_item19_shelf1 = shelf_to_elem(item19_shelf1);
+  elem_t *elem_item19_shelf2 = shelf_to_elem(item19_shelf2);
+  list_append(shelf_for_item19, *elem_item19_shelf1);
+  list_append(shelf_for_item19, *elem_item19_shelf2);
+  list_append(master_list, *elem_item19_shelf1);
+  list_append(master_list, *elem_item19_shelf2);
+  item_t *item19 = make_item("trä", 100, shelf_for_item19);
+  elem_t *elem_item19 = item_to_elem(item19);
+  
+  list_t *shelf_for_item20 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item20_shelf1 = make_shelf("S3", 34);
+  shelf_t *item20_shelf2 = make_shelf("A99", 4);
+  elem_t *elem_item20_shelf1 = shelf_to_elem(item20_shelf1);
+  elem_t *elem_item20_shelf2 = shelf_to_elem(item20_shelf2);
+  list_append(shelf_for_item20, *elem_item20_shelf1);
+  list_append(shelf_for_item20, *elem_item20_shelf2);
+  item_t *item20 = make_item("trä", 100, shelf_for_item20);
+  elem_t *elem_item20 = item_to_elem(item20);
+  
+  list_t *shelf_for_item21 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item21_shelf1 = make_shelf("A15", 34);
+  shelf_t *item21_shelf2 = make_shelf("A29", 4);
+  elem_t *elem_item21_shelf1 = shelf_to_elem(item21_shelf1);
+  elem_t *elem_item21_shelf2 = shelf_to_elem(item21_shelf2);
+  list_append(shelf_for_item21, *elem_item21_shelf1);
+  list_append(shelf_for_item21, *elem_item21_shelf2);
+  list_append(master_list, *elem_item21_shelf1);
+  list_append(master_list, *elem_item21_shelf2);
+  item_t *item21 = make_item("rostfri", 100, shelf_for_item21);
+  elem_t *elem_item21 = item_to_elem(item21);
+
+  list_t *shelf_for_item22 = list_new((element_copy_fun) copy_item,(element_free_fun) free_elem_list,(element_comp_fun) compare_letter);
+  shelf_t *item22_shelf1 = make_shelf("O88", 34);
+  shelf_t *item22_shelf2 = make_shelf("U29", 4);
+  elem_t *elem_item22_shelf1 = shelf_to_elem(item22_shelf1);
+  elem_t *elem_item22_shelf2 = shelf_to_elem(item22_shelf2);
+  list_append(shelf_for_item22, *elem_item22_shelf1);
+  list_append(shelf_for_item22, *elem_item22_shelf2);
+  list_append(master_list, *elem_item22_shelf1);
+  list_append(master_list, *elem_item22_shelf2);
+  item_t *item22 = make_item("rostfri", 100, shelf_for_item22);
+  elem_t *elem_item22 = item_to_elem(item22);
+  
+
+  char *key1 = "sickad tröja";
+  elem_t *elem_key1 = char_to_elem(key1);
+
+  char *key2 = "barnbok";
+  elem_t *elem_key2 = char_to_elem(key2);
+
+  char *key3 = "keyboard";
+  elem_t *elem_key3 = char_to_elem(key3);
+
+  char *key4 = "plånbok";
+  elem_t *elem_key4 = char_to_elem(key4);
+
+  char *key5 = "handväska";
+  elem_t *elem_key5 = char_to_elem(key5);
+  
+  tree_insert(tree, *elem_key1, *elem_item1);
+  tree_insert(tree, "barnbok", item2);
+  tree_insert(tree, "keyboard", item3);
+  tree_insert(tree, "plånbok", item4);
+  tree_insert(tree, "handväska", item5);
+  tree_insert(tree, "sudd", item6);
+  tree_insert(tree, "penna", item7);
+  tree_insert(tree, "strumpor", item8);
+  tree_insert(tree, "jeans", item9);
+  tree_insert(tree, "regnjacka", item10);
+  tree_insert(tree, "pyjamas", item11);
+  tree_insert(tree, "tofflor", item12);
+  tree_insert(tree, "örngott", item13);
+  tree_insert(tree, "toapapper", item14);
+  tree_insert(tree, "schampoo", item15);
+  tree_insert(tree, "handduk", item16);
+  tree_insert(tree, "dator", item17);
+  tree_insert(tree, "tv", item18);
+  tree_insert(tree, "skrivbord", item19);
+  tree_insert(tree, "matbord", item20);
+  tree_insert(tree, "brödrost", item21);
+  tree_insert(tree, "vattenkokare", item22);
+  
+  event_loop(tree, master_list);
+  return 0;
+
 }
