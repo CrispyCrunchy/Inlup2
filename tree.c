@@ -111,11 +111,11 @@ int tree_depth(tree_t *tree)
   return depth;
 }
 
-node_t *create_node(tree_t *tree, tree_key_t key, elem_t elem)
+node_t *create_node(/*tree_t *tree,*/ tree_key_t key, elem_t elem)
 {
-  node_t *tmp = (node_t *)calloc(1, sizeof(node_t));
-  tmp->key = tree->copy(key);
-  tmp->elem = tree->copy(elem);
+  node_t *tmp = calloc(1, sizeof(node_t));
+  tmp->key = key;
+  tmp->elem = elem;
   return tmp;
 }
 
@@ -131,7 +131,7 @@ bool node_insert(tree_t *tree, node_t *node, tree_key_t key, elem_t elem)
         {
           if (node->right == NULL)
             {
-              node->right = create_node(tree, key, elem);
+              node->right = create_node( key, elem);
               return true;
             }
           else
@@ -143,7 +143,7 @@ bool node_insert(tree_t *tree, node_t *node, tree_key_t key, elem_t elem)
         {
           if (node->left == NULL)
             {
-              node->left = create_node(tree, key, elem);
+              node->left = create_node( key, elem);
               return true;
             }
           else
@@ -165,7 +165,7 @@ bool tree_insert(tree_t *tree, tree_key_t key, elem_t elem)
     }
   else if (tree->root == NULL)
     {
-      tree->root = create_node(tree, key, elem);
+      tree->root = create_node( key, elem);
       return true;
     }
   else

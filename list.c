@@ -10,7 +10,7 @@ typedef struct link link_t;
 
 struct link
 {
-  elem_t *elem;
+  elem_t elem;
   struct link *next;
 };
 
@@ -38,7 +38,8 @@ list_t *list_new(element_copy_fun copy, element_free_fun free, element_comp_fun 
 int list_length(list_t *list)
 {
   int len = 0;
-  link_t *tmp = list->first;
+  link_t *tmp = NULL;
+  tmp = list->first;
   
   while (tmp != NULL)
     {
@@ -70,18 +71,25 @@ void list_insert(list_t *list, int index, elem_t elem)
 
   if (list->copy != NULL)
     {
-      *newlink->elem = list->copy(elem);
+      newlink->elem = list->copy(elem);
       for (int i = 1; i < index - 1; ++i)
         {
           tmp = tmp->next;
-        } 
-      newlink->next = tmp->next;
-      tmp->next = newlink;
+        }
+      if (tmp)
+        {
+          newlink->next = tmp->next;
+          tmp->next = newlink;
+        }
+      else
+        {
+          list->first = newlink;
+        }
     }
   
   else if(list->copy == NULL)
     {
-      newlink->elem = &elem;
+      newlink->elem = elem;
       for (int i = 1; i < index - 1; ++i)
         {
           tmp = tmp->next;
@@ -130,7 +138,7 @@ void list_remove(list_t *list, int index, bool delete)
       tem = tmp->next;
       tmp->next = tmp->next->next;
       // 'param delete if true, run list's free function on the removed element'
-      list->free(*tem->elem);   
+      list->free(tem->elem);   
     }
 }
 
@@ -154,7 +162,7 @@ bool list_get(list_t *list, int index, elem_t *result)
     {
       tmp = tmp->next;
     }
-  result = tmp->elem;
+  result = &tmp->elem;
   return true;
 }
 
@@ -177,7 +185,7 @@ void list_delete_aux(link_t *link, int len, element_free_fun free)
       list_delete_aux(link->next, len - 1, free);
     }
   
-  free(*link->elem);
+  free(link->elem);
 }
 
 void list_delete(list_t *list, bool delete)
@@ -199,7 +207,7 @@ bool list_apply(list_t *list, elem_apply_fun fun, void *data)
   bool t = false;
   for (int i = 0; i < siz; ++i)
     {
-      t = fun(*tmp->elem, data);
+      t = fun(tmp->elem, data);
       tmp = tmp->next;
       if (t == true)
         {

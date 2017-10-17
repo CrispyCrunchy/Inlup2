@@ -132,11 +132,11 @@ elem_t item_copy(elem_t *elem)
   item_copy->price = item->price;
 
   list_t *list_copy = list_new((element_copy_fun) shelf_copy, (element_free_fun) shelf_free, (element_comp_fun) compare_letter);
-  int siz = list_length(item->shelves);
+  int len = list_length(item->shelves);
 
   elem_t *result = NULL;
   
-  for (int i = 0; i < siz; ++i)
+  for (int i = 0; i < len; ++i)
     {
      list_get(item->shelves, i + 1, result);
      elem_t *elem_shelf_copy = shelf_copy(result);
@@ -688,24 +688,15 @@ void undo_change(struct action *savestate)
     }
   else if (savestate->type == 1)
     {
-      /*elem_t *result = NULL;
       elem_t *elem_orig = item_to_elem(savestate->orig);
-
-      tree_remove(tree, *elem_orig, result);
-
-      tree_get(tree, *elem_orig, result);
-  
-      free(item->desc);
-      list_delete(item->shelves, true);
-      */
-      tree_remove(savestate->key)
-      
+      item_free(elem_orig); 
 
       savestate->type = 0;
     }
   else if (savestate->type == 2)
     {
-      
+      *(savestate->orig) = savestate->copy;
+      savestate->type = 0;
     }
   else if (savestate->type == 3)
     {
