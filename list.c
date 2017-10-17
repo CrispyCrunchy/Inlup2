@@ -17,9 +17,11 @@ struct link
 struct list
 {
   link_t *first;
+
   element_copy_fun copy;
   element_free_fun free;
   element_comp_fun comp;
+
   link_t *last;
 };
 
@@ -181,7 +183,7 @@ void list_delete_aux(link_t *link, int len, element_free_fun free)
 void list_delete(list_t *list, bool delete)
 {
   int len = list_length(list);
-  // 'param delete if true, use list's free function to free elements'
+  
   if (delete == true)
     {
       list_delete_aux(list->first, len, list->free);
@@ -211,13 +213,12 @@ int list_contains(list_t *list, elem_t elem)
 {
   int len = list_length(list);
   elem_t *result = NULL;
-  bool list_exist = false;
 
   if (list->comp != NULL)
     {
       for (int i = 0; i <= len; ++i )
         {
-          list_exist = list_get(list, i, result);
+          list_get(list, i, result);
 
           if (list->comp(elem, *result) == 0)
             {
@@ -225,11 +226,12 @@ int list_contains(list_t *list, elem_t elem)
             }
         }
     }
+
   else
     {
       for (int i = 0; i <= len; ++i)
         {
-          list_exist = list_get(list, i, result);
+          list_get(list, i, result);
           
           if (elem.i == result->i)
             {
@@ -237,5 +239,6 @@ int list_contains(list_t *list, elem_t elem)
             }
         }
     }
+
   return - 1;
 }

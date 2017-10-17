@@ -7,7 +7,7 @@
 #include "tree.h"
 #include "list.h"
 #include "common.h"
-#include "db.h"
+//#include "db.h"
 
 typedef struct shelf shelf_t;
 
@@ -465,7 +465,6 @@ void undo_change(struct action *savestate)
     }
 }
 
-void sort_tree(tree_t *tree)
 
 void event_loop(tree_t *tree, list_t *master_list)
 {
@@ -497,7 +496,7 @@ void event_loop(tree_t *tree, list_t *master_list)
         }
        else if (input == 'S'|| input == 's')
         {
-          sort_tree();
+          tree_sort(tree);
         }
       else if (input == 'K'|| input == 'k')
         {

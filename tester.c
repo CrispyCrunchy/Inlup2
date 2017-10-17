@@ -30,6 +30,7 @@ struct item
 struct action
 {
   int type; // NOTHING = 0, ADD = 1, REMOVE = 2, EDIT = 3
+  char *key;
   item_t copy;
   item_t *orig;
 };
@@ -697,7 +698,9 @@ void undo_change(struct action *savestate)
       free(item->desc);
       list_delete(item->shelves, true);
       */
-   
+      tree_remove(savestate->key)
+      
+
       savestate->type = 0;
     }
   else if (savestate->type == 2)
