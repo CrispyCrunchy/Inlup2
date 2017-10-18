@@ -118,20 +118,19 @@ elem_t item_copy(elem_t elem)
 {
   item_t *item = elem_to_item(elem);
   item_t *copy = calloc(1, sizeof(item_t));
-  
+
   copy->desc = item->desc;
   copy->price = item->price;
 
   list_t *list_copy = list_new((element_copy_fun) shelf_copy, (element_free_fun) shelf_free, (element_comp_fun) compare_letter);
   int len = list_length(item->shelves);
 
-  elem_t *result = NULL;
+  elem_t result;
   
-  for (int i = 0; i < len; ++i)
+  for (int i = 1; i <= len; ++i)
     {
-     list_get(item->shelves, i + 1, result);
-     elem_t elem_shelf_copy = shelf_copy(*result);
-     list_append(list_copy, elem_shelf_copy);
+     list_get(item->shelves, i, &result);
+     list_append(list_copy, shelf_copy(result));
     }
   
   copy->shelves = list_copy;
@@ -189,12 +188,12 @@ item_t *make_item(char *desc, int price, list_t *shelves)
 void print_shelf(item_t *item)
 {
   int size = list_length(item->shelves);
-  elem_t *result = NULL;
+  elem_t result;
   shelf_t *shelf = NULL;
   for (int i = 1; i <= size; ++i)
     {
-      list_get(item->shelves, i, result);
-      shelf = elem_to_shelf(*result);
+      list_get(item->shelves, i, &result);
+      shelf = elem_to_shelf(result);
       char *name = shelf->shelf_name;
       printf("%d. Hyllplats: %s\n", i, name);
     }
@@ -228,12 +227,12 @@ int tree_index(tree_t *tree)
 bool exist_shelf(list_t *master_list, char *shelf_name)
 {
   int siz = list_length(master_list);
-  elem_t *result = NULL;
+  elem_t result;
   shelf_t *shelf = NULL;
   for (int i = 0; i <= siz; ++i)
     {
-      list_get(master_list, i, result);
-      shelf = elem_to_shelf(*result);
+      list_get(master_list, i, &result);
+      shelf = elem_to_shelf(result);
       char *compare_shelf = shelf->shelf_name;
      
       if (compare_letter(char_to_elem(shelf_name), char_to_elem(compare_shelf)) == 0)
@@ -258,9 +257,9 @@ void key_exist(tree_t *tree, tree_key_t *key, char *shelf_name, list_t *master_l
    
   int amount = ask_question_price("Ange antal varor på hyllan:");
   
-  elem_t *result = NULL;
-  tree_get(tree, *key, result);
-  item_t *change_item = elem_to_item(*result);
+  elem_t result;
+  tree_get(tree, *key, &result);
+  item_t *change_item = elem_to_item(result);
   
   shelf_t *new_shelf = make_shelf(shelf_name, amount);
   elem_t elem_new_shelf = shelf_to_elem(new_shelf);
@@ -334,12 +333,12 @@ tree_key_t get_key(tree_t *tree, int pos)
 int find_shelf_index(list_t *master_list, char *shelf_name)
 {
   int len = list_length(master_list);
-  elem_t *result = NULL;
+  elem_t result;
   shelf_t *shelf = NULL;
   for (int i = 0; i <= len; ++i)
     {
-      list_get(master_list, i, result);
-      shelf = elem_to_shelf(*result);
+      list_get(master_list, i, &result);
+      shelf = elem_to_shelf(result);
       char *compare_shelf = shelf->shelf_name;
       if (compare_letter(char_to_elem(shelf_name), char_to_elem(compare_shelf)) == 0)
         {
@@ -353,14 +352,14 @@ int find_shelf_index(list_t *master_list, char *shelf_name)
 void remove_shelf(item_t *item, tree_key_t key, list_t *master_list, int index, struct action *savestate)
 { 
   bool delete = true;
-  elem_t *result = NULL;
+  elem_t result;
 
   edit_savestate(item, key, savestate, 2);
   
   list_remove(item->shelves, index, delete);
   
-  list_get(item->shelves, index, result);
-  shelf_t *shelf = elem_to_shelf(*result);
+  list_get(item->shelves, index, &result);
+  shelf_t *shelf = elem_to_shelf(result);
   char *name = shelf->shelf_name;
   int index_master_list = find_shelf_index(master_list, name);
   list_remove(master_list, index_master_list, delete);
@@ -416,10 +415,10 @@ tree_t *delete_item(tree_t *tree, list_t *master_list, struct action *savestate)
 
   tree_key_t key = get_key(tree, delete_num);
   char *key_name = elem_to_char(key);
-  elem_t *result = NULL;
+  elem_t result;
 
-  tree_get(tree, key, result);
-  item_t *delete_item = elem_to_item(*result);
+  tree_get(tree, key, &result);
+  item_t *delete_item = elem_to_item(result);
   printf("%s finns på följade platser:\n", key_name);
   delete_item_shelf(delete_item, key, master_list, savestate);
 
@@ -429,11 +428,11 @@ tree_t *delete_item(tree_t *tree, list_t *master_list, struct action *savestate)
 void print_shelf_amount(item_t *item)
 {
   int size = list_length(item->shelves);
-  elem_t *result = NULL;
+  elem_t result;
   for (int i = 1; i < size + 1; ++i)
     {
-      list_get(item->shelves, i, result);
-      shelf_t *shelf = elem_to_shelf(*result);
+      list_get(item->shelves, i, &result);
+      shelf_t *shelf = elem_to_shelf(result);
       char *name = shelf->shelf_name;
       int amount = shelf->amount;
       printf("Hyllplats: %s\n    Antal: %d\n", name, amount);
@@ -443,11 +442,11 @@ void print_shelf_amount(item_t *item)
 void print_shelf_amount_index(item_t *item)
 {
   int size = list_length(item->shelves);
-  elem_t *result = NULL;
+  elem_t result;
   for (int i = 1; i < size + 1; ++i)
     {
-      list_get(item->shelves, i, result);
-      shelf_t *shelf = elem_to_shelf(*result); 
+      list_get(item->shelves, i, &result);
+      shelf_t *shelf = elem_to_shelf(result); 
       char *name = shelf->shelf_name;
       int amount = shelf->amount;
       printf("%d. Hyllplats: %s\n       Antal: %d\n", i, name, amount);
@@ -481,13 +480,13 @@ void edit_desc(tree_t *tree, tree_key_t key, item_t *item, struct action *savest
 
   edit_savestate(item, key, savestate, 3);
 
-  elem_t *result = NULL;
-  tree_get(tree, key, result);
+  elem_t result;
+  tree_get(tree, key, &result);
   
-  new_node = elem_to_item(*result);
+  new_node = elem_to_item(result);
   new_node->desc = new_desc;
   
-  tree_remove(tree, key, result);
+  tree_remove(tree, key, &result);
 
   elem_t elem_new_node = item_to_elem(new_node);
   tree_insert(tree, key, elem_new_node); 
@@ -503,13 +502,13 @@ void edit_price(tree_t *tree, tree_key_t key, item_t *item, struct action *saves
 
   edit_savestate(item, key, savestate, 3);
 
-  elem_t *result = NULL;
-  tree_get(tree, key, result);
+  elem_t result;
+  tree_get(tree, key, &result);
 
-  new_node = elem_to_item(*result);
+  new_node = elem_to_item(result);
   new_node->price = new_price;
   
-  tree_remove(tree, key, result);
+  tree_remove(tree, key, &result);
 
   elem_t elem_new_node = item_to_elem(new_node);
   tree_insert(tree, key, elem_new_node);
@@ -520,9 +519,9 @@ void replace_shelf(item_t *item, tree_key_t key, int shelf, list_t *master_list,
   char *new_shelf_name = calloc(1, sizeof(char));
   shelf_t *new_shelf = calloc(1, sizeof(shelf_t));
   shelf_t *current_shelf = calloc(1, sizeof(shelf_t));
-  elem_t *result = NULL;
-  list_get(item->shelves, shelf, result);
-  current_shelf = elem_to_shelf(*result);
+  elem_t result;
+  list_get(item->shelves, shelf, &result);
+  current_shelf = elem_to_shelf(result);
   
   printf("Nuvarande hylla: %s\n--------------------------------------------------------\n", current_shelf->shelf_name);
   
@@ -539,8 +538,8 @@ void replace_shelf(item_t *item, tree_key_t key, int shelf, list_t *master_list,
   edit_savestate(item, key, savestate, 3);
 
   // new_shelf = (shelf_t*) list_get(item->shelves, shelf, result);
-  list_get(item->shelves, shelf, result);
-  new_shelf = elem_to_shelf(*result);
+  list_get(item->shelves, shelf, &result);
+  new_shelf = elem_to_shelf(result);
   new_shelf->shelf_name = new_shelf_name;   
 }
 
@@ -575,9 +574,9 @@ void replace_amount(item_t *item, tree_key_t key, int shelf, struct action *save
   shelf_t *new_shelf = calloc(1, sizeof(shelf_t));
   shelf_t *current_shelf = calloc(1, sizeof(shelf_t));
 
-  elem_t *result = NULL;
-  list_get(item->shelves, shelf, result);
-  current_shelf = elem_to_shelf(*result);
+  elem_t result;
+  list_get(item->shelves, shelf, &result);
+  current_shelf = elem_to_shelf(result);
   
   printf("Nuvarande antal varor på hyllan: %d\n--------------------------------------------------------\n", current_shelf->amount);
   
@@ -586,9 +585,9 @@ void replace_amount(item_t *item, tree_key_t key, int shelf, struct action *save
   edit_savestate(item, key, savestate, 3);
   
   // newshelf = (shelf_t*) list_get(item->shelves, shelf);
-  result = NULL;
-  list_get(item->shelves, shelf, result);
-  new_shelf = elem_to_shelf(*result);
+  
+  list_get(item->shelves, shelf, &result);
+  new_shelf = elem_to_shelf(result);
   new_shelf->amount = new_amount;   
 }
 
@@ -638,10 +637,10 @@ tree_t *edit_storage(tree_t *tree, list_t *master_list, struct action *savestate
   
   tree_key_t key = print_node(tree, editnum);
 
-  elem_t *result = NULL;
-  tree_get(tree, key, result);
+  elem_t result;
+  tree_get(tree, key, &result);
 
-  item_t *item = elem_to_item(*result);
+  item_t *item = elem_to_item(result);
   
   char input = ask_question_edit("\n[B]eskrivning\n[P]ris\n[L]agerhylla\nAn[t]al\n\nVälj rad eller [a]vbryt:");
   if ((input == 'B' || input == 'b'))
