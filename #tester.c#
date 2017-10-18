@@ -47,9 +47,9 @@ elem_t *shelf_to_elem(shelf_t *shelf)
   return elem_pointer;
 }
 
-item_t *elem_to_item(elem_t pointer)
+item_t *elem_to_item(elem_t *pointer)
 {
-  return (item_t *)pointer.p;
+  return (item_t *)pointer->p;
 }
 
 elem_t *item_to_elem(item_t *item)
