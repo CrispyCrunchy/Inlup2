@@ -114,9 +114,9 @@ void shelf_free(elem_t elem)
   free(shelf->shelf_name);
 }
 
-elem_t item_copy(elem_t *elem)
+elem_t item_copy(elem_t elem)
 {
-  item_t *item = elem_to_item(*elem);
+  item_t *item = elem_to_item(elem);
   item_t *copy = calloc(1, sizeof(item_t));
   
   copy->desc = item->desc;
@@ -162,7 +162,7 @@ void edit_savestate(item_t *item, tree_key_t elem_key, struct action *savestate,
   savestate->key = key;
   
   elem_t elem = item_to_elem(item);
-  elem = item_copy(&elem);
+  elem = item_copy(elem);
   item_t *item_copy = elem_to_item(elem);
   savestate->copy = *item_copy;
   
