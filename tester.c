@@ -480,13 +480,14 @@ void edit_desc(tree_t *tree, tree_key_t key, item_t *item, struct action *savest
 
   edit_savestate(item, key, savestate, 3);
 
-  elem_t result;
-  tree_get(tree, key, &result);
+  elem_t result1;
+  tree_get(tree, key, &result1);
   
-  new_node = elem_to_item(result);
+  new_node = elem_to_item(result1);
   new_node->desc = new_desc;
-  
-  tree_remove(tree, key, &result);
+
+  elem_t result2;
+  tree_remove(tree, key, &result2);
 
   elem_t elem_new_node = item_to_elem(new_node);
   tree_insert(tree, key, elem_new_node); 
@@ -502,13 +503,14 @@ void edit_price(tree_t *tree, tree_key_t key, item_t *item, struct action *saves
 
   edit_savestate(item, key, savestate, 3);
 
-  elem_t result;
-  tree_get(tree, key, &result);
+  elem_t result1;
+  tree_get(tree, key, &result1);
 
-  new_node = elem_to_item(result);
+  new_node = elem_to_item(result1);
   new_node->price = new_price;
-  
-  tree_remove(tree, key, &result);
+
+  elem_t result2;
+  tree_remove(tree, key, &result2);
 
   elem_t elem_new_node = item_to_elem(new_node);
   tree_insert(tree, key, elem_new_node);
@@ -519,9 +521,9 @@ void replace_shelf(item_t *item, tree_key_t key, int shelf, list_t *master_list,
   char *new_shelf_name = calloc(1, sizeof(char));
   shelf_t *new_shelf = calloc(1, sizeof(shelf_t));
   shelf_t *current_shelf = calloc(1, sizeof(shelf_t));
-  elem_t result;
-  list_get(item->shelves, shelf, &result);
-  current_shelf = elem_to_shelf(result);
+  elem_t result1;
+  list_get(item->shelves, shelf, &result1);
+  current_shelf = elem_to_shelf(result1);
   
   printf("Nuvarande hylla: %s\n--------------------------------------------------------\n", current_shelf->shelf_name);
   
@@ -537,9 +539,9 @@ void replace_shelf(item_t *item, tree_key_t key, int shelf, list_t *master_list,
 
   edit_savestate(item, key, savestate, 3);
 
-  // new_shelf = (shelf_t*) list_get(item->shelves, shelf, result);
-  list_get(item->shelves, shelf, &result);
-  new_shelf = elem_to_shelf(result);
+  elem_t result2;
+  list_get(item->shelves, shelf, &result2);
+  new_shelf = elem_to_shelf(result2);
   new_shelf->shelf_name = new_shelf_name;   
 }
 
@@ -574,9 +576,9 @@ void replace_amount(item_t *item, tree_key_t key, int shelf, struct action *save
   shelf_t *new_shelf = calloc(1, sizeof(shelf_t));
   shelf_t *current_shelf = calloc(1, sizeof(shelf_t));
 
-  elem_t result;
-  list_get(item->shelves, shelf, &result);
-  current_shelf = elem_to_shelf(result);
+  elem_t result1;
+  list_get(item->shelves, shelf, &result1);
+  current_shelf = elem_to_shelf(result1);
   
   printf("Nuvarande antal varor på hyllan: %d\n--------------------------------------------------------\n", current_shelf->amount);
   
@@ -584,10 +586,9 @@ void replace_amount(item_t *item, tree_key_t key, int shelf, struct action *save
 
   edit_savestate(item, key, savestate, 3);
   
-  // newshelf = (shelf_t*) list_get(item->shelves, shelf);
-  
-  list_get(item->shelves, shelf, &result);
-  new_shelf = elem_to_shelf(result);
+  elem_t result2;
+  list_get(item->shelves, shelf, &result2);
+  new_shelf = elem_to_shelf(result2);
   new_shelf->amount = new_amount;   
 }
 
@@ -1059,13 +1060,13 @@ int main()
   char *key7 = "penna";
   elem_t elem_key7 = char_to_elem(key7);
 
-  char *key8 = "strumpor";
+  char *key8 = "strumpor"; // skrivs ej
   elem_t elem_key8 = char_to_elem(key8);
 
-  char *key9 = "jeans";
+  char *key9 = "jeans"; // skrivs ej
   elem_t elem_key9 = char_to_elem(key9);
 
-  char *key10 = "regnjacka";
+  char *key10 = "regnjacka"; // skrivs ej 
   elem_t elem_key10 = char_to_elem(key10);
 
   char *key11 = "pyjamas";
@@ -1098,7 +1099,7 @@ int main()
   char *key20 = "matbord";
   elem_t elem_key20 = char_to_elem(key20);
 
-  char *key21 = "brödrost";
+  char *key21 = "toaster";
   elem_t elem_key21 = char_to_elem(key21);
 
   char *key22 = "vattenkokare";

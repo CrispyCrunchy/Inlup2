@@ -207,8 +207,8 @@ bool node_get(tree_t *tree, node_t *node, tree_key_t key, elem_t *result)
     }
   else if (tree->comp(node->key, key) == true)
     {
-      result = calloc(1, sizeof(elem_t));
-      result = &node->elem;
+      //result = calloc(1, sizeof(elem_t));
+      *result = node->elem;
       return true;
     }
   else if (tree->comp(key, node->key) > 0)
@@ -423,10 +423,17 @@ void tree_sort_aux(tree_t *tree, node_t *node, tree_key_t *keys, elem_t *element
       node_delete(tree, node->right, true, true);
     }
 
+  else if (siz == 1)
+    {
+      node->key = keys[0];
+      node->elem = elements[0];
+      node_delete(tree, node->left, true, true);
+      node_delete(tree, node->right, true, true);
+    }
+    
   else
     {
       int i = 0;
-      siz = siz - 1;
       int half = siz/2;
       tree_key_t middle_key = keys[half];
       elem_t middle_elem = elements[half];
@@ -441,7 +448,7 @@ void tree_sort_aux(tree_t *tree, node_t *node, tree_key_t *keys, elem_t *element
 
       tree_key_t second_half_key[siz-half];
       elem_t     second_half_elem[siz-half];
-      for(++i; i <= siz; ++i)
+      for(i = i+1; i < siz; ++i)
         {
           second_half_key[i] = keys[i];
           second_half_elem[i] = elements[i];

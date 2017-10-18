@@ -158,11 +158,11 @@ bool list_get(list_t *list, int index, elem_t *result)
     {
       index = 1;
     }
-  for (int i = 0; i < index - 1; ++i)
+  for (int i = 1; i < index; ++i)
     {
       tmp = tmp->next;
     }
-  result = &tmp->elem;
+  *result = tmp->elem;
   return true;
 }
 
