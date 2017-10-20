@@ -40,12 +40,19 @@ tree_t *tree_new(element_copy_fun elem_copy, key_free_fun key_free, element_free
 
 void node_delete(tree_t *tree, node_t *node, bool delete_keys, bool delete_elements)
 {
-  if (delete_keys == true && delete_elements == true)
+  if (delete_keys == true && delete_elements == true && node)
     {
-      node_delete(tree, node->left, delete_keys, delete_elements);
-      node_delete(tree, node->right, delete_keys, delete_elements);
+      if (node->left)
+        {
+          node_delete(tree, node->left, delete_keys, delete_elements);
+        }
+      if (node->right)
+        {
+          node_delete(tree, node->right, delete_keys, delete_elements);
+        }
+      
       tree->key_free(node->key);
-      tree->elem_free(node->elem);
+      tree->elem_free(node->elem);        
     }
 }
 
@@ -279,11 +286,11 @@ elem_t *tree_elements(tree_t *tree)
 
 node_t *min_node(node_t *node)
 {
-    node_t *current = node;
-    while (current->left != NULL)
-        current = current->left;
+  node_t *current = node;
+  while (current->left != NULL)
+    current = current->left;
 
-    return current;
+  return current;
 }
 
 node_t *node_remove(tree_t *tree, node_t *node, tree_key_t key)
@@ -418,14 +425,22 @@ void tree_sort_aux(tree_t *tree, node_t *node, tree_key_t *keys, elem_t *element
 {
   if (siz == 0)
     {
-      tree->key_free(node->key);
-      tree->elem_free(node->elem);
-      node_delete(tree, node->left, true, true);
-      node_delete(tree, node->right, true, true);
+      if(node)
+        {
+          tree->key_free(node->key);
+          tree->elem_free(node->elem);
+          node_delete(tree, node->left, true, true);
+          node_delete(tree, node->right, true, true);
+        }
     }
 
   else if (siz == 1)
     {
+      if(!node)
+        {
+          node = calloc(1, sizeof(node_t));
+        }
+      
       node->key = keys[0];
       node->elem = elements[0];
       node_delete(tree, node->left, true, true);
@@ -449,10 +464,15 @@ void tree_sort_aux(tree_t *tree, node_t *node, tree_key_t *keys, elem_t *element
 
       tree_key_t second_half_key[siz-half];
       elem_t     second_half_elem[siz-half];
-      for(i = i+1; i < siz; ++i)
+      for(i = i + 1; i < siz; ++i)
         {
           second_half_key[i] = keys[i];
           second_half_elem[i] = elements[i];
+        }
+
+      if (!node)
+        {
+          node = calloc(1, sizeof(node_t));
         }
 
       node->key = middle_key;

@@ -142,8 +142,7 @@ elem_t item_copy(elem_t elem)
 
 void key_free(tree_key_t key)
 {
-  elem_t *pointer = &key;
-  free(pointer);
+  free(&key);
 }
 
 void item_free(elem_t *elem)
@@ -1105,7 +1104,7 @@ int main()
   tree_insert(tree, elem_key1, elem_item1);
   tree_insert(tree, elem_key2, elem_item2);
   tree_insert(tree, elem_key3, elem_item3);
-  tree_insert(tree, elem_key4, elem_item4);
+  /*tree_insert(tree, elem_key4, elem_item4);
   tree_insert(tree, elem_key5, elem_item5);
   tree_insert(tree, elem_key6, elem_item6);
   tree_insert(tree, elem_key7, elem_item7);
@@ -1123,7 +1122,7 @@ int main()
   tree_insert(tree, elem_key19, elem_item19);
   tree_insert(tree, elem_key20, elem_item20);
   tree_insert(tree, elem_key21, elem_item21);
-  tree_insert(tree, elem_key22, elem_item22);
+  tree_insert(tree, elem_key22, elem_item22);*/
   
   event_loop(tree, master_list);
   return 0;
