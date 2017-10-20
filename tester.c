@@ -142,14 +142,13 @@ elem_t item_copy(elem_t elem)
 
 void key_free(tree_key_t key)
 {
-  free(&key);
+  free(key.p);
 }
 
-void item_free(elem_t *elem)
+void item_free(elem_t elem)
 {
-  item_t *item = elem_to_item(*elem);
-  free(item->desc);
-  list_delete(item->shelves, true);
+  free(elem_to_item(elem)->desc);
+  list_delete(elem_to_item(elem)->shelves, true);
 }
 
 void edit_savestate(item_t *item, tree_key_t elem_key, struct action *savestate, int type)
@@ -681,7 +680,7 @@ void undo_change(tree_t *tree, struct action *savestate)
   else if (savestate->type == 1)
     {
       elem_t elem_orig = item_to_elem(savestate->orig);
-      item_free(&elem_orig);
+      item_free(elem_orig);
 
       elem_t key = char_to_elem(savestate->key);
       key_free(key);
@@ -1035,13 +1034,13 @@ int main()
   elem_t elem_item22 = item_to_elem(item22);
   
 
-  char *key1 = "sickad kofta";
+  char *key1 = strdup("sickad kofta");
   elem_t elem_key1 = char_to_elem(key1);
 
-  char *key2 = "barnbok";
+  char *key2 = strdup("barnbok");
   elem_t elem_key2 = char_to_elem(key2);
 
-  char *key3 = "keyboard";
+  char *key3 = strdup("keyboard");
   elem_t elem_key3 = char_to_elem(key3);
 
   char *key4 = "plånbok";

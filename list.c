@@ -184,24 +184,25 @@ bool list_last(list_t *list, elem_t *result)
 }
 
 
-void list_delete_aux(link_t *link, int len, element_free_fun free)
+void list_delete_aux(link_t *link, int len, element_free_fun free2, bool delete)
 {
   if (link->next != NULL)
     {
-      list_delete_aux(link->next, len - 1, free);
+      list_delete_aux(link->next, len - 1, free2, delete);
     }
-  
-  free(link->elem);
+  if (delete)
+    {
+      free2(link->elem);
+    }
+  free(link);
 }
 
 void list_delete(list_t *list, bool delete)
 {
   int len = list_length(list);
   
-  if (delete == true)
-    {
-      list_delete_aux(list->first, len, list->free);
-    }
+  list_delete_aux(list->first, len, list->free, delete);
+  free(list);
 }
 
 
