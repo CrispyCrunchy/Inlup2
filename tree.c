@@ -52,7 +52,8 @@ void node_delete(tree_t *tree, node_t *node, bool delete_keys, bool delete_eleme
         }
       
       tree->key_free(node->key);
-      tree->elem_free(node->elem);        
+      tree->elem_free(node->elem);
+      free(node);
     }
 }
 
@@ -60,6 +61,7 @@ void node_delete(tree_t *tree, node_t *node, bool delete_keys, bool delete_eleme
 void tree_delete(tree_t *tree, bool delete_keys, bool delete_elements)
 {
   node_delete(tree, tree->root, delete_keys, delete_elements);
+  free(tree);
 }
 
 
@@ -335,7 +337,6 @@ bool tree_remove(tree_t *tree, tree_key_t key, elem_t *result)
   if (tree_exist)
     {
       tree->root = node_remove(tree, tree->root, key);
-      return tree_exist;
     }
   return tree_exist;
 }
@@ -427,10 +428,7 @@ void tree_sort_aux(tree_t *tree, node_t *node, tree_key_t *keys, elem_t *element
     {
       if(node)
         {
-          tree->key_free(node->key);
-          tree->elem_free(node->elem);
-          node_delete(tree, node->left, true, true);
-          node_delete(tree, node->right, true, true);
+          node_delete(tree, node, true, true);
         }
     }
 

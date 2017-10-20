@@ -9,28 +9,33 @@ typedef struct link link_t;
 
 void test_list_new(void)
 {
-  list_t *new = list_new();
+  list_t *new = list_new(NULL, NULL, NULL);
   CU_ASSERT_TRUE(list_length(new) == 0);
-  list_delete(new, true);
+  list_delete(new, false);
 }
 
 void test_list_length(void)
 {
-  list_t *list = list_new();
+  list_t *list = list_new(NULL, NULL, NULL);
 
-  for (int i = 0; i < 10; ++i) list_append(list, );
+  elem_t elem1 = { .i = 1};
+  
+  for (int i = 0; i < 10; ++i)
+    {
+      list_append(list, elem1);
+    }
   CU_ASSERT_TRUE(list_length(list) == 10);
 
-  for (int i = 0; i < 10; ++i) list_append(list, );
+  for (int i = 0; i < 10; ++i)
+    {
+      list_append(list, elem1);
+    }
   CU_ASSERT_TRUE(list_length(list) == 20);
 
   list_remove(list, 1, true);
   CU_ASSERT_TRUE(list_length(list) == 19);
 
-  list_remove(list, 1, false);
-  CU_ASSERT_TRUE(list_length(list) == 19);
-
-  list_insert(list, 1, );
+  list_insert(list, 1, elem1);
   CU_ASSERT_TRUE(list_length(list) == 20);
 
   list_delete(list, true);
@@ -39,9 +44,13 @@ void test_list_length(void)
 void test_list_insert(void)
 {
   list_t *list = list_new();
+
+  elem_t elem1 = { .i = 1};
+  elem_t elem1 = { .i = 1};
+  
   for (int i = 0; i < 10; ++i)
     {
-      list_insert(list, 1, );
+      list_insert(list, 1, elem1);
       CU_TEST(list_length(list) == i + 1)
     }
 
