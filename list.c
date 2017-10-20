@@ -74,16 +74,22 @@ void list_insert(list_t *list, int index, elem_t elem)
       newlink->elem = list->copy(elem);
       for (int i = 1; i < index - 1; ++i)
         {
-          tmp = tmp->next;
+          tmp = tmp->next; 
         }
       if (tmp)
         {
           newlink->next = tmp->next;
           tmp->next = newlink;
         }
+      else if (tmp && tmp->next == NULL)
+        {
+          tmp->next = newlink;
+          list->last = newlink;
+        }
       else
         {
           list->first = newlink;
+          list->last = newlink;
         }
     }
   

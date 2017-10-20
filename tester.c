@@ -101,7 +101,7 @@ elem_t shelf_copy(elem_t elem)
   shelf_t *shelf_tmp  = elem_to_shelf(elem);
   shelf_t *shelf_copy = calloc(1, sizeof(shelf_t));
       
-  shelf_copy->shelf_name = shelf_tmp->shelf_name;
+  shelf_copy->shelf_name = strdup(shelf_tmp->shelf_name);
   shelf_copy->amount = shelf_tmp->amount;
 
   elem_t elem_shelf_copy = shelf_to_elem(shelf_copy);
@@ -119,7 +119,7 @@ elem_t item_copy(elem_t elem)
   item_t *item = elem_to_item(elem);
   item_t *copy = calloc(1, sizeof(item_t));
 
-  copy->desc = item->desc;
+  copy->desc = strdup(item->desc);
   copy->price = item->price;
 
   list_t *list_copy = list_new((element_copy_fun) shelf_copy, (element_free_fun) shelf_free, (element_comp_fun) compare_letter);
@@ -278,11 +278,9 @@ tree_t *ask_question_new_item(tree_t *tree, list_t *master_list)
   item_t *item = calloc(1, sizeof(struct item));
   list_t *shelves = list_new((element_copy_fun) shelf_copy,(element_free_fun) free,(element_comp_fun) compare_letter);
 
-  char *name = calloc(1, sizeof(char));
-  name = ask_question_string("Ange namn på varan:");
+  char *name = ask_question_string("Ange namn på varan:");
 
   *key = char_to_elem(name);
-  free(name);
   
   if (tree_has_key(tree, *key) == true)
     {
@@ -459,12 +457,11 @@ tree_key_t print_node(tree_t *tree, int pos)
   tree_key_t *keys = tree_keys(tree);
   
   elem_t *elem_items = tree_elements(tree);
-  item_t *items = elem_to_item(*elem_items);
   
   printf("Namn: %s\n", elem_to_char(keys[pos]));
-  printf("Beskriving: %s\n", items[pos].desc);
-  printf("Pris: %d kr\n", items[pos].price);
-  print_shelf_amount(&items[pos]);  
+  printf("Beskriving: %s\n", elem_to_item(elem_items[pos])->desc);
+  printf("Pris: %d kr\n", elem_to_item(elem_items[pos])->price);
+  print_shelf_amount(elem_to_item(elem_items[pos]));  
   return keys[pos];
 }
 
@@ -1039,7 +1036,7 @@ int main()
   elem_t elem_item22 = item_to_elem(item22);
   
 
-  char *key1 = "sickad tröja";
+  char *key1 = "sickad kofta";
   elem_t elem_key1 = char_to_elem(key1);
 
   char *key2 = "barnbok";

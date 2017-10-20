@@ -121,7 +121,7 @@ node_t *create_node(tree_t *tree, tree_key_t key, elem_t elem)
 
 bool node_insert(tree_t *tree, node_t *node, tree_key_t key, elem_t elem)
 {
-  if (tree->comp(node->key, key) == true && tree->comp != NULL)
+  if (tree->comp(node->key, key) == 0 && tree->comp != NULL)
     {
       return false;
     }
@@ -180,7 +180,7 @@ bool node_has_key(tree_t *tree, node_t *node, tree_key_t key)
     {
       return false;
     }
-  if (tree->comp(node->key, key) == true)
+  if (tree->comp(node->key, key) == 0)
     {
       return true;
     }
@@ -205,7 +205,7 @@ bool node_get(tree_t *tree, node_t *node, tree_key_t key, elem_t *result)
     {
       return false;
     }
-  else if (tree->comp(node->key, key) == true)
+  else if (tree->comp(node->key, key) == 0)
     {
       //result = calloc(1, sizeof(elem_t));
       *result = node->elem;
@@ -224,7 +224,8 @@ bool node_get(tree_t *tree, node_t *node, tree_key_t key, elem_t *result)
 
 bool tree_get(tree_t *tree, tree_key_t key, elem_t *result)
 {
-  return node_get(tree, tree->root, key, result);
+  bool node = node_get(tree, tree->root, key, result);
+  return node;
 }
 
 
