@@ -1043,67 +1043,67 @@ int main()
   char *key3 = strdup("keyboard");
   elem_t elem_key3 = char_to_elem(key3);
 
-  char *key4 = "plånbok";
+  char *key4 = strdup("plånbok");
   elem_t elem_key4 = char_to_elem(key4);
 
-  char *key5 = "handväska";
+  char *key5 = strdup("handväska");
   elem_t elem_key5 = char_to_elem(key5);
 
-  char *key6 = "sudd";
+  char *key6 = strdup("sudd");
   elem_t elem_key6 = char_to_elem(key6);
 
-  char *key7 = "penna";
+  char *key7 = strdup("penna");
   elem_t elem_key7 = char_to_elem(key7);
 
-  char *key8 = "strumpor"; // skrivs ej
+  char *key8 = strdup("strumpor");
   elem_t elem_key8 = char_to_elem(key8);
 
-  char *key9 = "jeans"; // skrivs ej
+  char *key9 = strdup("jeans");
   elem_t elem_key9 = char_to_elem(key9);
 
-  char *key10 = "regnjacka"; // skrivs ej 
+  char *key10 = strdup("regnjacka");
   elem_t elem_key10 = char_to_elem(key10);
 
-  char *key11 = "pyjamas";
+  char *key11 = strdup("pyjamas");
   elem_t elem_key11 = char_to_elem(key11);
 
-  char *key12 = "tofflor";
+  char *key12 = strdup("tofflor");
   elem_t elem_key12 = char_to_elem(key12);
 
-  char *key13 = "örngott";
+  char *key13 = strdup("örngott");
   elem_t elem_key13 = char_to_elem(key13);
 
-  char *key14 = "toapapper";
+  char *key14 = strdup("toapapper");
   elem_t elem_key14 = char_to_elem(key14);
 
-  char *key15 = "schampoo";
+  char *key15 = strdup("schampoo");
   elem_t elem_key15 = char_to_elem(key15);
 
-  char *key16 = "handduk";
+  char *key16 = strdup("handduk");
   elem_t elem_key16 = char_to_elem(key16);
 
-  char *key17 = "dator";
+  char *key17 = strdup("dator");
   elem_t elem_key17 = char_to_elem(key17);
 
-  char *key18 = "tv";
+  char *key18 = strdup("tv");
   elem_t elem_key18 = char_to_elem(key18);
 
-  char *key19 = "skrivbord";
+  char *key19 = strdup("skrivbord");
   elem_t elem_key19 = char_to_elem(key19);
 
-  char *key20 = "matbord";
+  char *key20 = strdup("matbord");
   elem_t elem_key20 = char_to_elem(key20);
 
-  char *key21 = "toaster";
+  char *key21 = strdup("toaster");
   elem_t elem_key21 = char_to_elem(key21);
 
-  char *key22 = "vattenkokare";
+  char *key22 = strdup("vattenkokare");
   elem_t elem_key22 = char_to_elem(key22);
   
   tree_insert(tree, elem_key1, elem_item1);
   tree_insert(tree, elem_key2, elem_item2);
   tree_insert(tree, elem_key3, elem_item3);
-  /*tree_insert(tree, elem_key4, elem_item4);
+  tree_insert(tree, elem_key4, elem_item4);
   tree_insert(tree, elem_key5, elem_item5);
   tree_insert(tree, elem_key6, elem_item6);
   tree_insert(tree, elem_key7, elem_item7);
@@ -1121,7 +1121,7 @@ int main()
   tree_insert(tree, elem_key19, elem_item19);
   tree_insert(tree, elem_key20, elem_item20);
   tree_insert(tree, elem_key21, elem_item21);
-  tree_insert(tree, elem_key22, elem_item22);*/
+  tree_insert(tree, elem_key22, elem_item22);
   
   event_loop(tree, master_list);
   return 0;

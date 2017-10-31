@@ -40,7 +40,7 @@ tree_t *tree_new(element_copy_fun elem_copy, key_free_fun key_free, element_free
 
 void node_delete(tree_t *tree, node_t *node, bool delete_keys, bool delete_elements)
 {
-  if (delete_keys == true && delete_elements == true && node)
+  if (node)
     {
       if (node->left)
         {
@@ -50,9 +50,14 @@ void node_delete(tree_t *tree, node_t *node, bool delete_keys, bool delete_eleme
         {
           node_delete(tree, node->right, delete_keys, delete_elements);
         }
-      
-      tree->key_free(node->key);
-      tree->elem_free(node->elem);
+      if (delete_keys)
+        {
+          tree->key_free(node->key);
+        }
+      if (delete_elements)
+        {
+          tree->elem_free(node->elem);
+        }
       free(node);
     }
 }
