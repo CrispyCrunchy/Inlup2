@@ -52,11 +52,17 @@ void node_delete(tree_t *tree, node_t *node, bool delete_keys, bool delete_eleme
         }
       if (delete_keys)
         {
-          tree->key_free(node->key);
+          if (node->key.p != NULL)
+            {
+              tree->key_free(node->key);
+            }
         }
       if (delete_elements)
         {
-          tree->elem_free(node->elem);
+          if (node->elem.p != NULL)
+            {
+              tree->elem_free(node->elem);
+            }
         }
       free(node);
     }
@@ -439,11 +445,6 @@ void tree_sort_aux(tree_t *tree, node_t *node, tree_key_t *keys, elem_t *element
 
   else if (siz == 1)
     {
-      if(!node)
-        {
-          node = calloc(1, sizeof(node_t));
-        }
-      
       node->key = keys[0];
       node->elem = elements[0];
       node_delete(tree, node->left, true, true);
@@ -457,31 +458,37 @@ void tree_sort_aux(tree_t *tree, node_t *node, tree_key_t *keys, elem_t *element
       tree_key_t middle_key = keys[half];
       elem_t middle_elem = elements[half];
   
-      tree_key_t first_half_key[half-1];
-      elem_t     first_half_elem[half-1];
-      for(; i <= half-1; ++i)
+      tree_key_t first_half_key[half];
+      elem_t     first_half_elem[half];
+      for(; i < half; ++i)
         {
           first_half_key[i] = keys[i];
           first_half_elem[i] = elements[i];
         }
 
-      tree_key_t second_half_key[siz-half];
-      elem_t     second_half_elem[siz-half];
+      tree_key_t second_half_key[siz-half-1];
+      elem_t     second_half_elem[siz-half-1];
       for(i = i + 1; i < siz; ++i)
         {
           second_half_key[i] = keys[i];
           second_half_elem[i] = elements[i];
         }
 
-      if (!node)
-        {
-          node = calloc(1, sizeof(node_t));
-        }
-
       node->key = middle_key;
       node->elem = middle_elem;
+
+      if (node->left == NULL)
+        {
+          node_t *tmp1 = calloc(1, sizeof(node_t));
+          node->left = tmp1;
+        }
+      if (node->right == NULL)
+        {
+          node_t *tmp2 = calloc(1, sizeof(node_t));
+          node->right = tmp2;
+        }
       tree_sort_aux(tree, node->left, first_half_key, first_half_elem, half-1);
-      tree_sort_aux(tree, node->left, second_half_key, second_half_elem, siz-half);
+      tree_sort_aux(tree, node->right, second_half_key, second_half_elem, siz-half);
     }
 }
 

@@ -8,7 +8,6 @@
 #include "tree.h"
 #include "list.h"
 #include "common.h"
-// #include "db.h"
 
 typedef struct shelf shelf_t;
 
@@ -112,6 +111,7 @@ void shelf_free(elem_t elem)
 {
   shelf_t *shelf = elem_to_shelf(elem);
   free(shelf->shelf_name);
+  free(shelf);
 }
 
 elem_t item_copy(elem_t elem)
@@ -146,9 +146,10 @@ void key_free(tree_key_t key)
 }
 
 void item_free(elem_t elem)
-{
+{ 
   free(elem_to_item(elem)->desc);
   list_delete(elem_to_item(elem)->shelves, true);
+  free(elem.p);
 }
 
 void edit_savestate(item_t *item, tree_key_t elem_key, struct action *savestate, int type)
