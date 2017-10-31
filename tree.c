@@ -466,22 +466,34 @@ void tree_sort_aux(tree_t *tree, node_t *node, tree_key_t *keys, elem_t *element
           first_half_elem[i] = elements[i];
         }
 
+<<<<<<< HEAD
       tree_key_t second_half_key[siz-half-1];
       elem_t     second_half_elem[siz-half-1];
+=======
+      tree_key_t second_half_key[siz - half - 1];
+      elem_t     second_half_elem[siz - half - 1];
+>>>>>>> 3a61fe29558194c311439689f2169401b257a62e
       for(i = i + 1; i < siz; ++i)
         {
           second_half_key[i] = keys[i];
           second_half_elem[i] = elements[i];
         }
-
+      
       node->key = middle_key;
       node->elem = middle_elem;
 
+<<<<<<< HEAD
+      node->key = middle_key;
+      node->elem = middle_elem;
+
+=======
+>>>>>>> 3a61fe29558194c311439689f2169401b257a62e
       if (node->left == NULL)
         {
           node_t *tmp1 = calloc(1, sizeof(node_t));
           node->left = tmp1;
         }
+<<<<<<< HEAD
       if (node->right == NULL)
         {
           node_t *tmp2 = calloc(1, sizeof(node_t));
@@ -489,6 +501,17 @@ void tree_sort_aux(tree_t *tree, node_t *node, tree_key_t *keys, elem_t *element
         }
       tree_sort_aux(tree, node->left, first_half_key, first_half_elem, half-1);
       tree_sort_aux(tree, node->right, second_half_key, second_half_elem, siz-half);
+=======
+      
+       if (node->right == NULL)
+        {
+          node_t *tmp2 = calloc(1, sizeof(node_t));
+          node->left = tmp2;
+        }
+       
+      tree_sort_aux(tree, node->left, first_half_key, first_half_elem, half);
+      tree_sort_aux(tree, node->right, second_half_key, second_half_elem, siz - half - 1);
+>>>>>>> 3a61fe29558194c311439689f2169401b257a62e
     }
 }
 
