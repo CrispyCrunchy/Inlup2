@@ -112,6 +112,7 @@ void shelf_free(elem_t elem)
 {
   shelf_t *shelf = elem_to_shelf(elem);
   free(shelf->shelf_name);
+  free(shelf);
 }
 
 elem_t item_copy(elem_t elem)
@@ -149,6 +150,7 @@ void item_free(elem_t elem)
 {
   free(elem_to_item(elem)->desc);
   list_delete(elem_to_item(elem)->shelves, true);
+  free(elem.p);
 }
 
 void edit_savestate(item_t *item, tree_key_t elem_key, struct action *savestate, int type)
@@ -1121,7 +1123,7 @@ int main()
   tree_insert(tree, elem_key19, elem_item19);
   tree_insert(tree, elem_key20, elem_item20);
   tree_insert(tree, elem_key21, elem_item21);
-  tree_insert(tree, elem_key22, elem_item22);
+  //tree_insert(tree, elem_key22, elem_item22);
   
   event_loop(tree, master_list);
   return 0;
