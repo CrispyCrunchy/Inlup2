@@ -32,6 +32,7 @@ struct action
   char *key;
   item_t copy;
   item_t *orig;
+  int shelf_index;
 };
 
 shelf_t *elem_to_shelf(elem_t pointer)
@@ -152,19 +153,18 @@ void item_free(elem_t elem)
   free(elem.p);
 }
 
-void edit_savestate(item_t *item, tree_key_t elem_key, struct action *savestate, int type)
+void edit_savestate(item_t *item, tree_key_t elem_key, struct action *savestate, int type, int shelf_index)
 {  
-  savestate->type = type;
-
-  char *key = elem_to_char(elem_key);  
-  savestate->key = key;
-  
+  char *key = elem_to_char(elem_key);
   elem_t elem = item_to_elem(item);
   elem = item_copy(elem);
   item_t *item_copy = elem_to_item(elem);
-  savestate->copy = *item_copy;
   
+  savestate->type = type;
+  savestate->key = key;
   savestate->orig = item;  
+  savestate->copy = *item_copy;
+  savestate->shelf_index = shelf_index;
 }
 
 shelf_t *make_shelf(char *shelf, int amount)
@@ -207,7 +207,7 @@ int tree_index(tree_t *tree)
   for (int i = 0; i < size; ++i, ++screen_index)
     {
       printf("%d. %s\n", screen_index, elem_to_char(keys[i]));
-      if (screen_index == 20)
+      if (screen_index == 20 && size > 20)
         {
           screen_index = 0;
           
@@ -348,24 +348,23 @@ int find_shelf_index(list_t *master_list, char *shelf_name)
 
 void remove_shelf(item_t *item, tree_key_t key, list_t *master_list, int index, struct action *savestate)
 { 
-  bool delete = true;
   elem_t result;
+  
+  edit_savestate(item, key, savestate, 2, index);
 
-  edit_savestate(item, key, savestate, 2);
-  
-  list_remove(item->shelves, index, delete);
-  
+  list_remove(item->shelves, index, true);
   list_get(item->shelves, index, &result);
+  
   shelf_t *shelf = elem_to_shelf(result);
-  char *name = shelf->shelf_name;
-  int index_master_list = find_shelf_index(master_list, name);
-  list_remove(master_list, index_master_list, delete);
+  char *shelf_name = shelf->shelf_name;
+  int index_master_list = find_shelf_index(master_list, shelf_name);
+  list_remove(master_list, index_master_list, true);
   
 }
 
 void free_item(item_t *item, tree_key_t key, struct action *savestate)
 {
-  edit_savestate(item, key, savestate, 2);
+  edit_savestate(item, key, savestate, 2, 0);
   
   free(item->desc);
   list_delete(item->shelves, true);
@@ -375,7 +374,6 @@ void free_item(item_t *item, tree_key_t key, struct action *savestate)
 void delete_item_shelf(item_t *item, tree_key_t key, list_t *master_list, struct action *savestate)
 {
   int len = list_length(item->shelves);
-  int shelf = 0;
   int delete_num = 0;
   if (len > 1)
     {
@@ -383,12 +381,12 @@ void delete_item_shelf(item_t *item, tree_key_t key, list_t *master_list, struct
       do
         {
           delete_num = ask_question_price("Ange vilken plats du vill ta bort:");
-           if (shelf > len)
+           if (delete_num > len)
             {
               printf("Felaktig inmatning; skriv ett nummer i listan.\n");
             }
         }
-      while (shelf > len);
+      while (delete_num > len);
       remove_shelf(item, key, master_list, delete_num, savestate);
     }
   else
@@ -416,8 +414,17 @@ tree_t *delete_item(tree_t *tree, list_t *master_list, struct action *savestate)
 
   tree_get(tree, key, &result);
   item_t *delete_item = elem_to_item(result);
-  printf("%s finns på följade platser:\n", key_name);
-  delete_item_shelf(delete_item, key, master_list, savestate);
+
+  int len = list_length(delete_item->shelves);
+  if (len > 1)
+    {
+      printf("%s finns på följade platser:\n", key_name);
+      delete_item_shelf(delete_item, key, master_list, savestate);
+    }
+  else
+    {
+      tree_remove(tree, key, &result);
+    }
 
   return tree;
 }
@@ -474,7 +481,7 @@ void edit_desc(tree_t *tree, tree_key_t key, item_t *item, struct action *savest
   
   new_desc = ask_question_string("Ny beskrivning:");
 
-  edit_savestate(item, key, savestate, 3);
+  edit_savestate(item, key, savestate, 3, 0);
 
   elem_t result1;
   tree_get(tree, key, &result1);
@@ -497,7 +504,7 @@ void edit_price(tree_t *tree, tree_key_t key, item_t *item, struct action *saves
   
   int new_price = ask_question_price("Nytt pris:");
 
-  edit_savestate(item, key, savestate, 3);
+  edit_savestate(item, key, savestate, 3, 0);
 
   elem_t result1;
   tree_get(tree, key, &result1);
@@ -533,7 +540,7 @@ void replace_shelf(item_t *item, tree_key_t key, int shelf, list_t *master_list,
     }
   while (exist_shelf(master_list, new_shelf_name));
 
-  edit_savestate(item, key, savestate, 3);
+  edit_savestate(item, key, savestate, 3, 0);
 
   elem_t result2;
   list_get(item->shelves, shelf, &result2);
@@ -580,7 +587,7 @@ void replace_amount(item_t *item, tree_key_t key, int shelf, struct action *save
   
   int new_amount = ask_question_price("Ntt antal:");
 
-  edit_savestate(item, key, savestate, 3);
+  edit_savestate(item, key, savestate, 3, 0);
   
   elem_t result2;
   list_get(item->shelves, shelf, &result2);
@@ -672,32 +679,44 @@ tree_t *edit_storage(tree_t *tree, list_t *master_list, struct action *savestate
 return tree;
 }
 
-void undo_change(tree_t *tree, struct action *savestate)
+void undo_change(tree_t *tree, struct action *savestate, list_t *master_list)
 {
+  elem_t result;
   if (savestate->type == 0)
     {
       printf("Det finns inget att ångra!\n");
     }
   else if (savestate->type == 1)
     {
-      elem_t elem_orig = item_to_elem(savestate->orig);
-      item_free(elem_orig);
-
       elem_t key = char_to_elem(savestate->key);
-      key_free(key);
-      
+      tree_remove(tree, key, &result);
+ 
       savestate->type = 0;
     }
   else if (savestate->type == 2)
     {
       //*(savestate->orig) = savestate->copy;
+
+      elem_t result;
+      item_t item = savestate->copy;
+      elem_t elem_item = item_to_elem(&item);
       
-      item_t *item = savestate->orig;
-      elem_t elem_item = item_to_elem(item);
 
       tree_key_t key = char_to_elem(savestate->key);
+
+      if (tree_has_key(tree, key) == true)
+        {
+          *(savestate->orig) = savestate->copy;
+          list_get(savestate->copy.shelves, savestate->shelf_index, &result);
+          list_append(master_list, result);
+        }
+      else
+        {
+          tree_insert(tree, key, elem_item);
+          list_get(savestate->copy.shelves, savestate->shelf_index, &result);
+          list_append(master_list, result);
+        }
       
-      tree_insert(tree, key, elem_item);
       savestate->type = 0;
     }
   else if (savestate->type == 3)
@@ -747,7 +766,7 @@ void event_loop(tree_t *tree, list_t *master_list)
         }
       else if (input == 'G'|| input == 'g')
         {
-          undo_change(tree, savestate);
+          undo_change(tree, savestate, master_list);
         }
       else if (input == 'H'|| input == 'h')
         {

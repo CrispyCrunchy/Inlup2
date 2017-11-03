@@ -137,14 +137,22 @@ void list_remove(list_t *list, int index, bool delete)
   
   if (delete == true)
     {
-      for (int i = 1; i < index - 1; ++i)
+      if (index == 1)
         {
-          tmp = tmp->next;
+          tem = tmp;
+          list->first = list->first->next;          
         }
-      tem = tmp->next;
-      tmp->next = tmp->next->next;
-      // 'param delete if true, run list's free function on the removed element'
-      list->free(tem->elem);   
+      else
+        {
+          for (int i = 1; i < index - 1; ++i)
+            {
+              tmp = tmp->next;
+            }
+          tem = tmp->next;
+          tmp->next = tmp->next->next;
+          // 'param delete if true, run list's free function on the removed element'
+        }
+      list->free(tem->elem);
     }
 }
 
