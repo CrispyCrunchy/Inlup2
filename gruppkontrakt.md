@@ -55,6 +55,13 @@ OSPP (1DT096) 2018 - Projekt alpha
 - Vid brott mot bestämmelser i gruppkontraktet skall detta följas upp på nästkommande möte.
 - Varje planeringsmöte kommer att ha en stående punkt där kontraktet skall diskuteras och kontraktet är öppet för eventuella förändringar.
 
+
+
+
+
+
+
+
 ## Utskrift och underskrifter
 
 
